@@ -2,6 +2,8 @@
 
 Browser-based call and response MIDI phrase generator for acid, techno and house.
 
+https://nordl3.github.io/Call-Response-Generator/
+
 It generates short paired phrases, lets you preview them in the browser, and exports MIDI files for the call, response, combined pattern, or both separate files.
 
 ## Features
