@@ -1,0 +1,1730 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Call / Response Generator</title>
+<style>
+:root{
+  --bg:#0f1115; --panel:#171b22; --panel2:#1d2430; --line:#2a3444;
+  --text:#e7edf5; --muted:#99a7ba; --accent:#69a7ff; --good:#8be9a8; --warn:#ffd479; --active:#ffb86c;
+}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:1880px;margin:0 auto;padding:16px}
+h1{margin:0 0 8px 0;font-size:24px}
+.sub{color:var(--muted);margin-bottom:14px}
+.grid-top{display:grid;grid-template-columns:1.2fr 1.2fr 1.2fr 1fr;gap:12px;align-items:start}
+.panel{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:0 8px 20px rgba(0,0,0,.2)}
+.panel h2{margin:0 0 10px 0;font-size:16px}
+.row2,.row3,.row4{display:grid;gap:10px}.row2{grid-template-columns:1fr 1fr}.row3{grid-template-columns:1fr 1fr 1fr}.row4{grid-template-columns:1fr 1fr 1fr 1fr}
+label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px 0}
+select,input[type="number"],input[type="range"]{width:100%;border-radius:8px;border:1px solid #38465b;background:#0f141d;color:var(--text);padding:8px 10px}
+button{appearance:none;border:1px solid #456083;background:#172131;color:var(--text);border-radius:9px;padding:9px 12px;cursor:pointer;font-weight:600}
+button.primary{background:#172131;border-color:#456083}
+button.good{background:#172131;border-color:#456083}
+button.warn{background:#172131;border-color:#456083}
+button.small{padding:7px 10px;font-size:12px}
+.actions,.actions2{display:flex;gap:8px;flex-wrap:wrap}
+.tiny{font-size:12px;color:var(--muted)}
+.status{padding:8px 10px;background:#121722;border:1px dashed #3a4c67;border-radius:8px;color:var(--warn)}
+details{margin-top:10px}
+details summary{cursor:pointer;color:#d8e3f0;font-weight:700}
+.main-bottom{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.laneHead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.stepgrid{display:grid;grid-template-columns:repeat(16,minmax(42px,1fr));gap:6px}
+.step{border:1px solid var(--line);background:#10161f;border-radius:10px;padding:6px;min-height:106px;display:flex;flex-direction:column;gap:4px;overflow:hidden}
+.step .idx{font-size:11px;color:var(--muted)}
+.step .name{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step .meta{font-size:11px;color:#c3cfde}
+.step.activePlay{outline:2px solid var(--active); background:#182131}
+.step.inactiveStep{opacity:0.35;background:#0b1017}
+.chip{display:inline-block;padding:2px 6px;border-radius:999px;background:#0d253f;border:1px solid #295d99;font-size:11px;color:#cfe3ff}
+.kpi{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.box{background:#111722;border:1px solid #304056;border-radius:8px;padding:8px}.box b{display:block;font-size:12px;color:#cfe0f0}.box span{font-size:12px;color:#8fa4bd}
+.footerNote{margin-top:12px;color:var(--muted);font-size:12px}
+@media (max-width:1400px){.grid-top{grid-template-columns:1fr 1fr}.main-bottom{grid-template-columns:1fr}}
+@media (max-width:900px){.grid-top,.row2,.row3,.row4{grid-template-columns:1fr}.stepgrid{grid-template-columns:repeat(8,minmax(42px,1fr))}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Call / Response Generator</h1>
+  <div class="sub">Single-file browser generator for short techno / acid / house call-and-response phrases. Motif first, phrase second, surface detail third.</div>
+
+  <div class="grid-top">
+    
+
+<section class="panel">
+      <h2>Transport / audition</h2>
+      <div class="actions" style="margin-top:4px;">
+        <button id="btnPlay">Play</button>
+        <button id="btnPreviewPair">Restart loop</button>
+        <button id="btnPanic">Panic</button>
+      </div>
+      <div class="row3" style="margin-top:10px;">
+        <div><label for="soundEngine">Sound engine</label><select id="soundEngine"></select></div>
+        <div><label for="metronomeOn">Metronome</label><select id="metronomeOn"><option value="Off">Off</option><option value="On" selected>On</option></select></div>
+        <div><label for="tempo">Tempo</label><input id="tempo" type="number" min="40" max="300" value="140"></div>
+      </div>
+      <div class="row3" style="margin-top:10px;">
+        <div><label for="masterLevel">Sound level</label><input id="masterLevel" type="range" min="0" max="100" value="55"></div>
+        <div><label for="metronomeLevel">Metronome level</label><input id="metronomeLevel" type="range" min="0" max="100" value="25"></div>
+        <div><label for="noteLengthPct">Note length %</label><input id="noteLengthPct" type="range" min="40" max="200" value="100"></div>
+      </div>
+      <div class="actions2" style="margin-top:10px;">
+        <button id="btnExportCombined">Export combined MIDI</button>
+        <button id="btnExportCall">Export call MIDI</button>
+        <button id="btnExportResp">Export response MIDI</button>
+        <button id="btnExportLayered">Export layered MIDI</button>
+        <button id="btnExportBoth">Export both MIDI files</button>
+      </div>
+      <div class="status" id="status" style="margin-top:10px;">Ready. Tempo is manual only.</div>
+    </section>
+
+
+
+    
+<section class="panel">
+      <h2>Generation</h2>
+      <div class="row2">
+        <div><label for="style">Style</label><select id="style"></select></div>
+        <div><label for="responseStrategy">Response strategy</label><select id="responseStrategy"></select></div>
+      </div>
+      <div class="row3" style="margin-top:10px;">
+        <div><label for="motifType">Motif type</label><select id="motifType"></select></div>
+        <div><label for="phraseMode">Phrase mode</label><select id="phraseMode"></select></div>
+        <div><label for="endingBehaviour">Ending behaviour</label><select id="endingBehaviour"></select></div>
+      </div>
+      <div class="actions" style="margin-top:10px;">
+        <button id="btnNewCall">New call</button>
+        <button id="btnNewResponse">New response</button>
+        <button id="btnNewBoth">New both</button>
+        <button id="btnMutateCall">Mutate call</button>
+        <button id="btnMutateResp">Mutate response</button>
+        <button id="btnMutateBoth">Mutate both</button>
+      </div>
+      <div class="actions" style="margin-top:8px;">
+        <button id="btnShiftCallLeft" class="small">Shift call ←</button>
+        <button id="btnShiftCallRight" class="small">Shift call →</button>
+        <button id="btnShiftRespLeft" class="small">Shift response ←</button>
+        <button id="btnShiftRespRight" class="small">Shift response →</button>
+        <button id="btnShiftBothLeft" class="small">Shift both ←</button>
+        <button id="btnShiftBothRight" class="small">Shift both →</button>
+      </div>
+
+      <div style="margin-top:10px;border:1px solid #304056;border-radius:12px;padding:10px;background:#111722;">
+        <div style="font-size:12px;color:#cfe0f0;font-weight:700;margin-bottom:8px;">Random</div>
+        <div class="actions">
+          <button class="small rnd" data-r="motif">Motif</button>
+          <button class="small rnd" data-r="strategy">Response strategy</button>
+          <button class="small rnd" data-r="style">Style</button>
+          <button class="small rnd" data-r="keyscale">Key + scale</button>
+          <button class="small rnd" data-r="art">Articulation</button>
+          <button class="small rnd" data-r="sound">Sound</button>
+          <button class="small rnd" data-r="phrase">Phrase mode</button>
+          <button class="small rnd" data-r="call">Call</button>
+          <button class="small rnd" data-r="response">Response</button>
+          <button class="small warn rnd" data-r="both">Both</button>
+          <button class="small warn rnd" data-r="allx">All except tempo</button>
+          <button class="small rnd" data-r="keepmotif">Keep motif / random rest</button>
+          <button class="small rnd" data-r="keeprhythm">Keep rhythm / random pitch</button>
+          <button class="small rnd" data-r="keeppitch">Keep pitch / random rhythm</button>
+          <button id="btnRandomPhraseSetupAll" class="small">Phrase setup</button>
+          <button id="btnRandomPhraseSetupKeep" class="small">Phrase setup except key + steps</button>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="panel">
+      <h2>Phrase setup</h2>
+      <div class="row4">
+        <div><label for="key">Key</label><select id="key"></select></div>
+        <div><label for="scale">Scale</label><select id="scale"></select></div>
+        <div><label for="rootOctave">Base octave / root</label><select id="rootOctave"></select></div>
+        <div><label for="steps">Steps per phrase</label><select id="steps"></select></div>
+      </div>
+      <div class="row4" style="margin-top:10px;">
+        <div><label for="registerProfile">Register profile</label><select id="registerProfile"></select></div>
+        <div><label for="densityPreset">Density preset</label><select id="densityPreset"></select></div>
+        <div><label for="contourPreset">Contour preset</label><select id="contourPreset"></select></div>
+        <div><label for="repetitionPreset">Repetition preset</label><select id="repetitionPreset"></select></div>
+      </div>
+      <div class="row3" style="margin-top:10px;">
+        <div><label for="mutationAmount">Mutation amount</label><select id="mutationAmount"></select></div>
+        <div><label for="mutationTarget">Mutation target</label><select id="mutationTarget"></select></div>
+        <div><label for="notePoolMode">Note pool mode</label><select id="notePoolMode"></select></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Articulation / routing</h2>
+      <div class="row2">
+        <div><label for="articulationProfile">Articulation profile</label><select id="articulationProfile"></select></div>
+        <div><label for="gateFeel">Gate feel</label><select id="gateFeel"></select></div>
+      </div>
+      <div class="row3" style="margin-top:10px;">
+        <div><label for="connectionFeel">Connection / note join</label><select id="connectionFeel"></select></div>
+        <div><label for="slideProfile">Slide profile</label><select id="slideProfile"></select></div>
+        <div><label for="accentProfile">Accent profile</label><select id="accentProfile"></select></div>
+      </div>
+      <details open>
+        <summary>Advanced phrase options</summary>
+        <div class="row2" style="margin-top:8px;">
+          <div><label for="callLaneOutput">Call lane output</label><select id="callLaneOutput"></select></div>
+          <div><label for="responseLaneOutput">Response lane output</label><select id="responseLaneOutput"></select></div>
+        </div>
+        <div class="row2" style="margin-top:10px;">
+          <div><label for="callChannel">Call MIDI channel</label><select id="callChannel"></select></div>
+          <div><label for="responseChannel">Response MIDI channel</label><select id="responseChannel"></select></div>
+        </div>
+        <div class="actions" style="margin-top:10px;">
+          <button class="small" id="btnSaveCfg">Dump project JSON</button>
+          <button class="small" id="btnLoadCfg">Load project JSON</button>
+          <input id="cfgFileInput" type="file" accept=".json,application/json" style="display:none;">
+          <button class="small" id="btnReset">Reset controls</button>
+        </div>
+      </details>
+    </section>
+  </div>
+
+  <div class="main-bottom">
+    <section class="panel">
+      <div class="laneHead">
+        <h2>Call</h2>
+        <div class="tiny"><span class="chip">Motif first</span> <span class="chip">Phrase second</span> <span class="chip">Surface detail third</span></div>
+      </div>
+      <div id="callGrid" class="stepgrid"></div>
+    </section>
+    <section class="panel">
+      <div class="laneHead">
+        <h2>Response</h2>
+        <div class="tiny"><span class="chip">Derived from call</span> <span class="chip">Not independent random</span></div>
+      </div>
+      <div id="responseGrid" class="stepgrid"></div>
+    </section>
+  </div>
+
+  <div class="footerNote">Single-file build.</div>
+</div>
+
+<script>
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+const SCALE_INTERVALS = {
+  'Chromatic':[0,1,2,3,4,5,6,7,8,9,10,11],
+  'Major / Ionian':[0,2,4,5,7,9,11],
+  'Natural Minor / Aeolian':[0,2,3,5,7,8,10],
+  'Harmonic Minor':[0,2,3,5,7,8,11],
+  'Melodic Minor':[0,2,3,5,7,9,11],
+  'Dorian':[0,2,3,5,7,9,10],
+  'Phrygian':[0,1,3,5,7,8,10],
+  'Mixolydian':[0,2,4,5,7,9,10],
+  'Locrian':[0,1,3,5,6,8,10],
+  'Lydian':[0,2,4,6,7,9,11],
+  'Lydian Dominant':[0,2,4,6,7,9,10],
+  'Aeolian b5':[0,2,3,5,6,8,10],
+  'Dorian b2':[0,1,3,5,7,9,10],
+  'Mixolydian b6':[0,2,4,5,7,8,10],
+  'Major Pentatonic':[0,2,4,7,9],
+  'Minor Pentatonic':[0,3,5,7,10],
+  'Blues Minor':[0,3,5,6,7,10],
+  'Blues Major':[0,2,3,4,7,9],
+  'Phrygian Dominant':[0,1,4,5,7,8,10],
+  'Double Harmonic':[0,1,4,5,7,8,11],
+  'Hungarian Minor':[0,2,3,6,7,8,11],
+  'Romanian Minor':[0,2,3,6,7,9,10],
+  'Whole Tone':[0,2,4,6,8,10],
+  'Diminished Half-Whole':[0,1,3,4,6,7,9,10],
+  'Diminished Whole-Half':[0,2,3,5,6,8,9,11],
+  'Persian':[0,1,4,5,6,8,11],
+  'Arabic':[0,2,4,5,6,8,10],
+  'Byzantine':[0,1,4,5,7,8,11],
+  'Hirajoshi':[0,2,3,7,8],
+  'In Sen':[0,1,5,7,10],
+  'Japanese Pentatonic':[0,1,5,7,8],
+  'Kumoi':[0,2,3,7,9],
+  'Pelog-ish':[0,1,3,7,8],
+  'Egyptian Pentatonic':[0,2,5,7,10],
+  'Minor Triad only':[0,3,7],
+  'Power Fifths':[0,7],
+  'Root + b7':[0,10],
+  'Root + 5th + b7':[0,7,10],
+  'Root + 2nd + 5th':[0,2,7],
+  'Minor 7 arpeggio pool':[0,3,7,10],
+  'Dominant 7 arpeggio pool':[0,4,7,10],
+  'Diminished 7 arpeggio pool':[0,3,6,9]
+};
+
+const DATA = {
+  keys: NOTE_NAMES,
+  scales: Object.keys(SCALE_INTERVALS),
+  styles: ['Classic Acid','Raw Acid','Squelchy Acid','Dark Acid','Hypno Acid','Sparse Acid','Busy Acid','Acid Stabs','Acid Runner','Acid Question/Answer','Driving Techno','Hypnotic Techno','Minimal Techno','Raw Warehouse','Tool Techno','Dub Techno','Industrial Techno','Percussive Techno','Loop Techno','Broken Techno','Jackin House','Deep House','Minimal House','Classic House','Tech House','Bass House','Shuffly House','Organ House-ish','House Stabline','House Bounce','90s Rave','Dark Rave','Rave Stab','Electro Pulse','Breaky Electro','Detroit-ish','Proto-Trance','Hooverish Riff','Motif Study','Rooted Groove','Repetitive Hook','Wide Answer','Tight Answer','Tension Builder','Resolver','Call Lead / Response Support'],
+  responseStrategies: ['Same rhythm + resolve','Same rhythm + new contour','Motif + simplify','Motif + extend','Motif + truncate','Echo','Answer upward','Answer downward','Higher answer','Lower answer','Invert contour','Mirror contour loosely','Copy rhythm / change notes','Copy notes / change rhythm','Transpose motif up','Transpose motif down','Response resolves to root','Response resolves to 5th','Response resolves lower','Response resolves harder','Repeat then break','Tighter answer','Sparser answer','Busier answer','Accent the answer','Slide the answer','Staccato answer','Legato answer','Delayed answer','Half-phrase answer','Fragment reply','Tail answer','Opposite register','Same motif darker','Same motif brighter','Question then closure','Hook then fill','Call dominant / response tonic'],
+  phraseModes: ['Call only','Response only','Call then response','Response then call','Alternate full bars','Alternate half bars','Alternate 2-step cells','Alternate 1-step cells','Call, call, response','Call, response, response','Call, varied call, response','Call, response, varied response','A / B / A / C',"A / A' / B / B'",'Hook then answer','Question then answer','Single pass','Continuous phrase loop','Call loop only','Response loop only','Phrase pair loop','Call with response fill','Response only on every 2nd pass','Response only on every 4th pass','Mutating call, stable response','Stable call, mutating response','Both stable','Both mutate slowly','Call grows, response resolves','Call sparse, response busy','Call busy, response sparse'],
+  soundEngines: ['Acid Mono','Warm Mono','Square Bass','Pulse Bass','Sub Bass','Pluck','Clean Lead','Hollow Lead','FM-ish','Dirty Mono','Resonant Mono','Lo-fi Mono'],
+  motifTypes: ['Pulse','Offbeat','Syncopated','Push','Sparse','Dense','Rest-heavy','Four-on-floor companion','Stabbed','Rolling','Repeated note','Stepwise rise','Stepwise fall','Rise then drop','Drop then rise','Leap then settle','Pivot note','Two-note hook','Three-note hook','Arp fragment','Acid nibble','Techno cell','House bounce','Rave stab figure','Drone anchor','Pedal point motif','Call tag','Answer tag'],
+  articulationProfiles: ['Clean','Punchy','Rolling','Acidic','Hypnotic','Choppy','Fluid','Stabbed','Tense','Released'],
+  gateFeels: ['Tight','Short','Medium','Long','Mixed','Random within bounds'],
+  connectionFeels: ['Detached','Semi-detached','Legato','Tied bias','Mixed ties','Connected runs'],
+  slideProfiles: ['None','Rare','Occasional','Acid moderate','Acid heavy','Phrase-end slides','Upward slides bias','Downward slides bias'],
+  accentProfiles: ['None','Light','Moderate','Heavy','Offbeat accents','Downbeat accents','Motif accents','Random accents within motif'],
+  playTargets: ['Call then response loop'],
+  playbackModes: ['Loop'],
+  endingBehaviours: ['Resolve to root','Resolve to 5th','Leave hanging','Rise into next phrase','Fall into next phrase','Hard stop','Fade energy','Strong cadence','Weak cadence','Ambiguous ending','Response more resolved than call','Response same tension as call','Response more tense than call'],
+  registerProfiles: ['Narrow register','Medium register','Wide register'],
+  densityPresets: ['Very sparse','Sparse','Medium','Busy','Dense','Very dense'],
+  contourPresets: ['Flat','Slight rise','Slight fall','Arch','Inverted arch','Wandering','Stepwise','Leapy'],
+  repetitionPresets: ['Very repetitive','Repetitive','Balanced','Varied','Highly varied'],
+  mutationAmounts: ['Tiny','Small','Medium','Strong','Brutal'],
+  mutationTargets: ['Rhythm only','Pitch only','Articulation only','Ending only','Motif only','Whole phrase','Response only','Call only','Call + response linked'],
+  notePoolModes: ['Strict note pool','Pool with spice notes','Pool expands on response','Pool contracts on response','Root-heavy','Root + 5th heavy','Triad pool','Seventh pool','Scale-wide'],
+  outputs: ['OUT 1','OUT 2','Both outputs','Same output / channel split'],
+  channels: Array.from({length:16}, (_,i)=>`Channel ${i+1}`),
+  octaves: ['C1','C2','C3','C4','C5'],
+  steps: Array.from({length:15}, (_,i)=>String(i+2)),
+};
+
+const DEFAULTS = {
+  playTarget:'Call then response loop', playbackMode:'Loop', tempo:140, noteLengthPct:100, soundEngine:'Acid Mono',
+  style:'Classic Acid', responseStrategy:'Same rhythm + resolve', motifType:'Acid nibble',
+  phraseMode:'Call then response', endingBehaviour:'Response more resolved than call',
+  key:'A', scale:'Minor Pentatonic', rootOctave:'C3', steps:'8',
+  registerProfile:'Medium register', densityPreset:'Medium', contourPreset:'Stepwise',
+  repetitionPreset:'Repetitive', mutationAmount:'Medium', mutationTarget:'Call + response linked',
+  notePoolMode:'Pool with spice notes', articulationProfile:'Acidic', gateFeel:'Mixed',
+  connectionFeel:'Legato', slideProfile:'Occasional', accentProfile:'Motif accents',
+  callLaneOutput:'OUT 1', responseLaneOutput:'OUT 1', callChannel:'Channel 1', responseChannel:'Channel 2', metronomeOn:'On'
+};
+
+const state = {
+  call:[], response:[],
+  audioCtx:null, master:null,
+  playing:false, uiTimer:null, loopTimer:null,
+  metroTimer:null,
+  scheduledStops:[],
+  restartDebounce:null,
+  muteGate:null,
+  runToken:0,
+  seed:Math.random()
+};
+
+function el(id){ return document.getElementById(id); }
+function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function chance(p){ return Math.random() < p; }
+function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+function pickN(arr, n){
+  const a=[...arr], out=[];
+  while(a.length && out.length<n){
+    out.push(a.splice(Math.floor(Math.random()*a.length),1)[0]);
+  }
+  return out;
+}
+function setStatus(t){ el('status').textContent = t; }
+function fillSelect(id, items, selectedText=null){
+  const sel = el(id); sel.innerHTML='';
+  items.forEach(txt=>{
+    const o=document.createElement('option');
+    o.value=txt; o.textContent=txt;
+    if(selectedText && txt===selectedText) o.selected=true;
+    sel.appendChild(o);
+  });
+}
+function rootMidi(c){
+  const octaveMap={'C1':24,'C2':36,'C3':48,'C4':60,'C5':72};
+  return octaveMap[c.rootOctave] + NOTE_NAMES.indexOf(c.key);
+}
+function degreeToMidi(deg, c){
+  const s = c.scale;
+  const len = s.length || 1;
+  const oct = Math.floor(deg / len);
+  const idx = ((deg % len)+len)%len;
+  return rootMidi(c) + s[idx] + oct*12;
+}
+function midiToName(m){ return NOTE_NAMES[(m%12+12)%12] + (Math.floor(m/12)-1); }
+
+function cfg(){
+  return {
+    playTarget: 'Call then response loop',
+    playbackMode: 'Loop',
+    tempo: Number(el('tempo').value),
+    noteLengthPct: Number(el('noteLengthPct').value),
+    soundEngine: el('soundEngine').value,
+    style: el('style').value,
+    responseStrategy: el('responseStrategy').value,
+    motifType: el('motifType').value,
+    phraseMode: el('phraseMode').value,
+    endingBehaviour: el('endingBehaviour').value,
+    key: el('key').value,
+    scaleName: el('scale').value,
+    scale: SCALE_INTERVALS[el('scale').value] || SCALE_INTERVALS['Minor Pentatonic'],
+    rootOctave: el('rootOctave').value,
+    steps: Number(el('steps').value),
+    registerProfile: el('registerProfile').value,
+    densityPreset: el('densityPreset').value,
+    contourPreset: el('contourPreset').value,
+    repetitionPreset: el('repetitionPreset').value,
+    mutationAmount: el('mutationAmount').value,
+    mutationTarget: el('mutationTarget').value,
+    notePoolMode: el('notePoolMode').value,
+    articulationProfile: el('articulationProfile').value,
+    gateFeel: el('gateFeel').value,
+    connectionFeel: el('connectionFeel').value,
+    slideProfile: el('slideProfile').value,
+    accentProfile: el('accentProfile').value,
+    callChannel: Number(el('callChannel').value.replace('Channel ','')) - 1,
+    responseChannel: Number(el('responseChannel').value.replace('Channel ','')) - 1
+  };
+}
+
+function densityValue(name){ return {'Very sparse':0.24,'Sparse':0.36,'Medium':0.52,'Busy':0.66,'Dense':0.8,'Very dense':0.92}[name] || 0.5; }
+function repetitionValue(name){ return {'Very repetitive':0.88,'Repetitive':0.72,'Balanced':0.5,'Varied':0.32,'Highly varied':0.18}[name] || 0.5; }
+function contourBias(name){ return {'Flat':0,'Slight rise':1,'Slight fall':-1,'Arch':2,'Inverted arch':-2,'Wandering':99,'Stepwise':100,'Leapy':101}[name] ?? 0; }
+
+function styleCategory(style){
+  const map = stylePresetMap();
+  if(map[style] && map[style].cat) return map[style].cat;
+  const s = style.toLowerCase();
+  if(s.includes('acid')) return 'acid';
+  if(s.includes('house')) return 'house';
+  if(s.includes('techno')) return 'techno';
+  if(s.includes('rave') || s.includes('electro') || s.includes('hoover')) return 'rave';
+  return 'other';
+}
+function preferredStepActivation(cat, idx){
+  if(cat==='acid') return [0.82,0.35,0.72,0.28][idx % 4];
+  if(cat==='techno') return [0.86,0.18,0.58,0.22][idx % 4];
+  if(cat==='house') return [0.72,0.48,0.62,0.34][idx % 4];
+  if(cat==='rave') return [0.78,0.42,0.68,0.38][idx % 4];
+  return [0.7,0.35,0.6,0.3][idx % 4];
+}
+
+function stylePresetMap(){
+  return {
+    'Classic Acid': {cat:'acid', density:0.56, repeat:0.66, slide:0.38, accent:0.46, rootBias:0.30, syncBias:0.28},
+    'Raw Acid': {cat:'acid', density:0.62, repeat:0.58, slide:0.32, accent:0.54, rootBias:0.24, choppyBias:0.24},
+    'Squelchy Acid': {cat:'acid', density:0.54, repeat:0.62, slide:0.46, accent:0.42, sustainBias:0.28},
+    'Dark Acid': {cat:'acid', density:0.46, repeat:0.70, slide:0.26, accent:0.34, rootBias:0.38, restBias:0.20},
+    'Hypno Acid': {cat:'acid', density:0.48, repeat:0.78, slide:0.24, accent:0.28, sustainBias:0.42},
+    'Sparse Acid': {cat:'acid', density:0.34, repeat:0.74, slide:0.22, accent:0.30, restBias:0.30},
+    'Busy Acid': {cat:'acid', density:0.72, repeat:0.54, slide:0.36, accent:0.44, motifVar:0.24},
+    'Acid Stabs': {cat:'acid', density:0.42, repeat:0.66, slide:0.10, accent:0.52, choppyBias:0.46},
+    'Acid Runner': {cat:'acid', density:0.70, repeat:0.60, slide:0.34, accent:0.36, leap:0.26},
+    'Acid Question/Answer': {cat:'acid', density:0.52, repeat:0.68, slide:0.26, accent:0.40, responseTightness:0.78},
+
+    'Driving Techno': {cat:'techno', density:0.44, repeat:0.78, accent:0.24, choppyBias:0.34, rootBias:0.38},
+    'Hypnotic Techno': {cat:'techno', density:0.36, repeat:0.86, accent:0.18, sustainBias:0.28, responseTightness:0.78},
+    'Minimal Techno': {cat:'techno', density:0.28, repeat:0.84, accent:0.16, restBias:0.34, choppyBias:0.40},
+    'Raw Warehouse': {cat:'techno', density:0.48, repeat:0.66, accent:0.34, choppyBias:0.42, leap:0.18},
+    'Tool Techno': {cat:'techno', density:0.40, repeat:0.82, accent:0.18, rootBias:0.44},
+    'Dub Techno': {cat:'techno', density:0.26, repeat:0.88, accent:0.14, restBias:0.32, sustainBias:0.36},
+    'Industrial Techno': {cat:'techno', density:0.46, repeat:0.60, accent:0.38, choppyBias:0.48, leap:0.20},
+    'Percussive Techno': {cat:'techno', density:0.42, repeat:0.74, accent:0.32, choppyBias:0.44},
+    'Loop Techno': {cat:'techno', density:0.38, repeat:0.90, accent:0.16, responseTightness:0.84},
+    'Broken Techno': {cat:'techno', density:0.44, repeat:0.48, accent:0.24, motifVar:0.28, leap:0.22},
+
+    'Jackin House': {cat:'house', density:0.52, repeat:0.66, accent:0.24, offbeatBias:0.42},
+    'Deep House': {cat:'house', density:0.36, repeat:0.76, accent:0.18, sustainBias:0.24, offbeatBias:0.36},
+    'Minimal House': {cat:'house', density:0.30, repeat:0.82, accent:0.18, restBias:0.26, offbeatBias:0.30},
+    'Classic House': {cat:'house', density:0.46, repeat:0.70, accent:0.22, offbeatBias:0.38},
+    'Tech House': {cat:'house', density:0.44, repeat:0.68, accent:0.22, choppyBias:0.22, offbeatBias:0.28},
+    'Bass House': {cat:'house', density:0.58, repeat:0.62, accent:0.28, rootBias:0.40, offbeatBias:0.26},
+    'Shuffly House': {cat:'house', density:0.48, repeat:0.66, accent:0.22, offbeatBias:0.48, sustainBias:0.18},
+    'Organ House-ish': {cat:'house', density:0.42, repeat:0.72, accent:0.18, sustainBias:0.30, offbeatBias:0.34},
+    'House Stabline': {cat:'house', density:0.40, repeat:0.70, accent:0.34, choppyBias:0.34, offbeatBias:0.30},
+    'House Bounce': {cat:'house', density:0.50, repeat:0.68, accent:0.22, offbeatBias:0.50, leap:0.10},
+
+    '90s Rave': {cat:'rave', density:0.56, repeat:0.46, accent:0.28, leap:0.30, octaveBias:0.22},
+    'Dark Rave': {cat:'rave', density:0.44, repeat:0.56, accent:0.24, leap:0.24, rootBias:0.30},
+    'Rave Stab': {cat:'rave', density:0.40, repeat:0.62, accent:0.38, choppyBias:0.36},
+    'Electro Pulse': {cat:'rave', density:0.46, repeat:0.62, accent:0.24, offbeatBias:0.24},
+    'Breaky Electro': {cat:'rave', density:0.48, repeat:0.42, accent:0.22, motifVar:0.26},
+    'Detroit-ish': {cat:'other', density:0.40, repeat:0.70, accent:0.18, rootBias:0.34, sustainBias:0.20},
+    'Proto-Trance': {cat:'rave', density:0.48, repeat:0.64, accent:0.18, sustainBias:0.24, leap:0.18},
+    'Hooverish Riff': {cat:'rave', density:0.52, repeat:0.50, accent:0.30, leap:0.34},
+
+    'Motif Study': {cat:'other', density:0.42, repeat:0.92, accent:0.14, motifVar:0.06, responseTightness:0.88},
+    'Rooted Groove': {cat:'other', density:0.40, repeat:0.80, accent:0.16, rootBias:0.56},
+    'Repetitive Hook': {cat:'other', density:0.46, repeat:0.90, accent:0.18, motifVar:0.10},
+    'Wide Answer': {cat:'other', density:0.44, repeat:0.60, accent:0.18, responseTightness:0.46, leap:0.28},
+    'Tight Answer': {cat:'other', density:0.44, repeat:0.72, accent:0.18, responseTightness:0.88},
+    'Tension Builder': {cat:'other', density:0.48, repeat:0.66, accent:0.22, stableEnd:0.40, leap:0.22},
+    'Resolver': {cat:'other', density:0.40, repeat:0.74, accent:0.16, stableEnd:0.90, responseTightness:0.78},
+    'Call Lead / Response Support': {cat:'other', density:0.42, repeat:0.72, accent:0.18, responseTightness:0.84}
+  };
+}
+function styleProfile(c){
+  const style=c.style.toLowerCase();
+  let density=0.45, leap=0.18, repeat=0.45, stableEnd=0.7, accent=0.25, slide=0.18;
+  let restBias=0.18, motifVar=0.18, responseTightness=0.5, rootBias=0.22, octaveBias=0.12;
+  let syncBias=0.18, offbeatBias=0.14, sustainBias=0.18, choppyBias=0.14;
+
+  const preset = stylePresetMap()[c.style];
+  if(style.includes('acid')){density=0.55; leap=0.22; repeat=0.62; accent=0.45; slide=0.35; rootBias=0.28; responseTightness=0.66; syncBias=0.26; sustainBias=0.34;}
+  if(style.includes('raw')){density+=0.08; accent+=0.08; motifVar+=0.08; choppyBias+=0.12;}
+  if(style.includes('hypno')){repeat+=0.15; leap-=0.08; stableEnd=0.55; restBias=0.1; responseTightness=0.72; sustainBias+=0.16;}
+  if(style.includes('minimal')){density-=0.12; repeat+=0.12; restBias=0.28;}
+  if(style.includes('busy')){density+=0.18; restBias-=0.06;}
+  if(style.includes('sparse')){density-=0.18; restBias+=0.12;}
+  if(style.includes('house')){density=0.48; leap=0.12; repeat=0.58; accent=0.22; slide=0.1; rootBias=0.32; responseTightness=0.62; offbeatBias=0.3; syncBias=0.2; sustainBias=0.12;}
+  if(style.includes('techno')){density=0.42; leap=0.14; repeat=0.68; accent=0.2; slide=0.08; rootBias=0.35; restBias=0.24; responseTightness=0.7; choppyBias=0.3; syncBias=0.12;}
+  if(style.includes('rave')||style.includes('electro')||style.includes('hoover')){density=0.5; leap=0.24; repeat=0.35; accent=0.3; slide=0.06; octaveBias=0.2; offbeatBias=0.22;}
+  if(style.includes('dub')){density=0.34; repeat=0.7; restBias=0.3; stableEnd=0.78; sustainBias=0.22;}
+  if(style.includes('industrial')||style.includes('warehouse')){density=0.46; leap=0.18; repeat=0.56; accent=0.34; rootBias=0.4; choppyBias=0.28;}
+  if(style.includes('motif study')){repeat=0.82; motifVar=0.08; responseTightness=0.85;}
+  if(style.includes('rooted groove')){rootBias=0.5; repeat=0.7; stableEnd=0.8;}
+  if(style.includes('repetitive hook')){repeat=0.85; density=0.48; motifVar=0.1;}
+
+  if(preset){
+    density = preset.density ?? density;
+    leap = preset.leap ?? leap;
+    repeat = preset.repeat ?? repeat;
+    stableEnd = preset.stableEnd ?? stableEnd;
+    accent = preset.accent ?? accent;
+    slide = preset.slide ?? slide;
+    restBias = preset.restBias ?? restBias;
+    motifVar = preset.motifVar ?? motifVar;
+    responseTightness = preset.responseTightness ?? responseTightness;
+    rootBias = preset.rootBias ?? rootBias;
+    octaveBias = preset.octaveBias ?? octaveBias;
+    syncBias = preset.syncBias ?? syncBias;
+    offbeatBias = preset.offbeatBias ?? offbeatBias;
+    sustainBias = preset.sustainBias ?? sustainBias;
+    choppyBias = preset.choppyBias ?? choppyBias;
+  }
+
+  return {density, leap, repeat, stableEnd, accent, slide, restBias, motifVar, responseTightness, rootBias, octaveBias, syncBias, offbeatBias, sustainBias, choppyBias};
+}
+
+function notePool(c){
+  const scaleLen = c.scale.length;
+  let pool = [...Array(Math.min(scaleLen,7)).keys()];
+  if(c.notePoolMode==='Strict note pool') pool = pickN(pool, Math.min(pool.length, 3));
+  else if(c.notePoolMode==='Pool with spice notes') pool = [...new Set([...pickN(pool, Math.min(pool.length,4)), Math.min(scaleLen-1, Math.floor(scaleLen/2))])];
+  else if(c.notePoolMode==='Pool expands on response') pool = [0,1,2,4].filter(x=>x<scaleLen);
+  else if(c.notePoolMode==='Pool contracts on response') pool = [...Array(scaleLen).keys()];
+  else if(c.notePoolMode==='Root-heavy') pool = [0,0,0,1,2,4].filter(x=>x<scaleLen);
+  else if(c.notePoolMode==='Root + 5th heavy') pool = [0,0,4,4,1,2].filter(x=>x<scaleLen);
+  else if(c.notePoolMode==='Triad pool') pool = [0,2,4].filter(x=>x<scaleLen);
+  else if(c.notePoolMode==='Seventh pool') pool = [0,2,4,6].filter(x=>x<scaleLen);
+  else if(c.notePoolMode==='Scale-wide') pool = [...Array(scaleLen).keys()];
+  return pool.length ? pool : [0];
+}
+
+function motifTemplate(c){
+  const t = c.motifType.toLowerCase();
+  let len = c.steps <= 4 ? 2 : (c.steps <= 8 ? rand([2,3,4]) : rand([3,4]));
+  let rhythm = Array(len).fill(false), contour=[];
+  if(t.includes('pulse')) rhythm = Array(len).fill(true);
+  else if(t.includes('offbeat')) rhythm = Array.from({length:len},(_,i)=>i%2===1);
+  else if(t.includes('sync')) rhythm = Array.from({length:len},(_,i)=>chance(i===0?0.78:0.55));
+  else if(t.includes('sparse')||t.includes('rest')) rhythm = Array.from({length:len},()=>chance(0.45));
+  else if(t.includes('dense')||t.includes('rolling')) rhythm = Array.from({length:len},()=>chance(0.82));
+  else if(t.includes('stab')) rhythm = Array.from({length:len},(_,i)=> i===0 || chance(0.25));
+  else rhythm = Array.from({length:len},()=>chance(0.65));
+  if(!rhythm.some(Boolean)) rhythm[0]=true;
+
+  if(t.includes('repeated')) contour = Array(len).fill(0);
+  else if(t.includes('stepwise rise')) contour = Array.from({length:len},(_,i)=>i);
+  else if(t.includes('stepwise fall')) contour = Array.from({length:len},(_,i)=>-i);
+  else if(t.includes('rise then drop')) contour = [0,1,2,0,-1].slice(0,len);
+  else if(t.includes('drop then rise')) contour = [0,-1,-2,0,1].slice(0,len);
+  else if(t.includes('leap')) contour = [0, rand([2,3,4]), 1, 0].slice(0,len);
+  else if(t.includes('pivot')) contour = [0,1,0,-1].slice(0,len);
+  else if(t.includes('two-note')) contour = [0,1,0,1].slice(0,len);
+  else if(t.includes('three-note')) contour = [0,1,2,1].slice(0,len);
+  else if(t.includes('arp')) contour = [0,2,4,2].slice(0,len);
+  else if(t.includes('acid')||t.includes('techno')||t.includes('house')) contour = [0,0,1,0,-1].slice(0,len);
+  else contour = Array.from({length:len},()=>rand([-1,0,1]));
+  return {len, rhythm, contour};
+}
+
+function articulationForStep(idx, active, c, motifPos){
+  const sp = styleProfile(c);
+  const cat = styleCategory(c.style);
+  let gate=0.82, accent=false, slide=false, tie=false;
+  const gateFeel=c.gateFeel, conn=c.connectionFeel, slideP=c.slideProfile, accentP=c.accentProfile, art=c.articulationProfile;
+
+  if(gateFeel==='Tight') gate=0.45;
+  else if(gateFeel==='Short') gate=0.6;
+  else if(gateFeel==='Medium') gate=0.82;
+  else if(gateFeel==='Long') gate=1.15;
+  else if(gateFeel==='Mixed') gate=[0.55,0.7,0.85,1.0,1.15][idx%5];
+  else if(gateFeel==='Random within bounds') gate=0.45 + Math.random()*0.8;
+
+  if(cat==='acid'){
+    gate = Math.max(gate, 0.72 + (motifPos===0 ? 0.12 : 0));
+    if(idx % 4 === 3 && chance(sp.sustainBias)) gate = Math.max(gate, 1.0);
+  } else if(cat==='techno'){
+    gate = Math.min(gate, 0.78);
+    if(idx % 4 === 0) gate = Math.min(0.68, gate);
+  } else if(cat==='house'){
+    if(idx % 2 === 1 && chance(sp.offbeatBias)) gate = Math.max(gate, 0.9);
+    else gate = Math.min(Math.max(gate, 0.62), 0.95);
+  }
+
+  if(conn==='Detached') gate=Math.min(gate,0.62);
+  else if(conn==='Semi-detached') gate=Math.min(Math.max(gate,0.6),0.85);
+  else if(conn==='Legato') gate=Math.max(gate,1.0);
+  else if(conn==='Tied bias') { gate=Math.max(gate,1.05); tie=chance(0.25); }
+  else if(conn==='Mixed ties') tie=chance(0.18);
+  else if(conn==='Connected runs') gate=Math.max(gate,1.0), tie=chance(0.12);
+
+  if(art==='Acidic'){ accent=chance(sp.accent); slide=chance(sp.slide); gate=Math.max(gate,0.86); }
+  if(art==='Punchy'){ accent=chance(0.25); gate=Math.min(gate,0.68); }
+  if(art==='Rolling'){ gate=Math.max(gate,0.95); tie = tie || chance(0.12); }
+  if(art==='Choppy'){ gate=Math.min(gate,0.55); slide=false; }
+  if(art==='Fluid'){ gate=Math.max(gate,1.05); slide=chance(0.18); }
+  if(art==='Stabbed'){ gate=Math.min(gate,0.5); accent=chance(0.35); }
+  if(art==='Tense'){ accent=chance(0.32); slide=chance(0.08); }
+  if(art==='Released'){ gate=Math.max(gate,0.95); accent=chance(0.12); }
+
+  if(slideP==='None') slide=false;
+  else if(slideP==='Rare') slide = chance(0.06);
+  else if(slideP==='Occasional') slide = chance(0.16);
+  else if(slideP==='Acid moderate') slide = chance(0.28);
+  else if(slideP==='Acid heavy') slide = chance(0.42);
+  else if(slideP==='Phrase-end slides') slide = chance(motifPos>=2 ? 0.32 : 0.04);
+  else if(slideP==='Upward slides bias') slide = chance(0.18);
+  else if(slideP==='Downward slides bias') slide = chance(0.18);
+
+  if(accentP==='None') accent=false;
+  else if(accentP==='Light') accent = chance(0.14);
+  else if(accentP==='Moderate') accent = chance(0.24);
+  else if(accentP==='Heavy') accent = chance(0.38);
+  else if(accentP==='Offbeat accents') accent = idx%2===1 && chance(0.5);
+  else if(accentP==='Downbeat accents') accent = idx%4===0 || idx===0;
+  else if(accentP==='Motif accents') accent = motifPos===0 || chance(0.08);
+  else if(accentP==='Random accents within motif') accent = chance(0.22);
+
+  if(cat==='acid' && active){
+    if(idx % 4 === 0) accent = accent || chance(0.45);
+    if(idx % 4 === 2) slide = slide || chance(0.2);
+    tie = tie || chance(0.08);
+  } else if(cat==='techno' && active){
+    accent = accent || (idx % 4 === 0 && chance(0.35));
+    gate = Math.min(gate, chance(sp.choppyBias) ? 0.58 : gate);
+    slide = slide && chance(0.5);
+  } else if(cat==='house' && active){
+    accent = accent || (idx % 2 === 1 && chance(0.28));
+    if(idx % 2 === 1 && chance(sp.offbeatBias)) gate = Math.max(gate, 0.95);
+  }
+
+  if(!active){ accent=false; slide=false; tie=false; }
+  return {gate, accent, slide, tie};
+}
+
+function postProcessArticulation(phrase, c){
+  const cat = styleCategory(c.style);
+  if(cat==='acid'){
+    for(let i=0;i<phrase.length;i++){
+      const s=phrase[i];
+      if(!s.active || s.degree==null) continue;
+      if((i % 4 === 0 || i===0) && chance(0.55)) s.accent = true;
+      if(s.degree===0 && chance(0.45)) s.accent = true;
+      if(i < phrase.length-1 && phrase[i+1] && phrase[i+1].active){
+        const diff = Math.abs((phrase[i+1].degree ?? s.degree) - s.degree);
+        if(diff >= 1 && diff <= 3 && chance(0.28)) s.slide = true;
+        if(diff <= 2 && chance(0.16)){ s.tie=true; s.gate=Math.max(s.gate||0.8,1.05); }
+      }
+      if(!s.slide && !s.tie && chance(0.35)) s.gate = Math.min(s.gate||0.8, 0.82);
+    }
+    let slides = phrase.filter(s=>s.slide).length;
+    const maxSlides = Math.ceil(phrase.length / 3);
+    if(slides > maxSlides){
+      for(let i=phrase.length-1;i>=0 && slides>maxSlides;i--){
+        if(phrase[i].slide){ phrase[i].slide=false; slides--; }
+      }
+    }
+  } else if(cat==='techno'){
+    phrase.forEach((s,i)=>{ if(s.active){ s.slide=false; if(i%4===0 && chance(0.42)) s.accent=true; if(chance(0.3)) s.gate=Math.min(s.gate||0.8,0.62);} });
+  } else if(cat==='house'){
+    phrase.forEach((s,i)=>{ if(s.active){ if(i%2===1 && chance(0.36)) s.accent=true; if(i%2===1 && chance(0.4)) s.gate=Math.max(s.gate||0.8,0.92); if(chance(0.1)) s.tie=true; }});
+  }
+  return phrase;
+}
+
+function stableDegreesForScale(c){ return [0,2,4,6].filter(x=>x < c.scale.length); }
+function phraseContour(phrase){
+  const degs = phrase.filter(s=>s.active && s.degree!=null).map(s=>s.degree);
+  if(degs.length < 2) return 0;
+  return degs[degs.length-1] - degs[0];
+}
+function motifFromCall(call, steps){
+  const motifLen = Math.max(2, Math.min(4, Math.floor(steps/2)));
+  return call.slice(0,motifLen).map(s=>({...s}));
+}
+
+function applyEnding(phrase,c,phase='call'){
+  const lastIdx = phrase.length - 1;
+  if(lastIdx < 0) return;
+  if(!phrase[lastIdx].active){
+    phrase[lastIdx].active = true;
+    phrase[lastIdx].degree = 0;
+  }
+  const end = c.endingBehaviour;
+  if(end.includes('Resolve to root')) phrase[lastIdx].degree = 0;
+  else if(end.includes('Resolve to 5th')) phrase[lastIdx].degree = Math.min(4, c.scale.length-1);
+  else if(end.includes('Rise into')) phrase[lastIdx].degree = clamp((phrase[lastIdx-1]?.degree||0)+1,0,10);
+  else if(end.includes('Fall into')) phrase[lastIdx].degree = clamp((phrase[lastIdx-1]?.degree||1)-1,0,10);
+  else if(end.includes('Hard stop')) { phrase[lastIdx].gate = 0.35; phrase[lastIdx].tie=false; }
+  else if(end.includes('Fade energy')) { phrase[lastIdx].accent=false; phrase[lastIdx].gate=0.55; }
+  else if(end.includes('Strong cadence')) phrase[lastIdx].degree = rand([0,0,0,2,4].filter(x=>x<c.scale.length));
+  else if(end.includes('Weak cadence')) phrase[lastIdx].degree = rand([1,3,5].filter(x=>x<c.scale.length));
+  else if(end.includes('Ambiguous')) phrase[lastIdx].degree = rand([1,2,5].filter(x=>x<c.scale.length));
+  if(phase==='response' && c.endingBehaviour.includes('more resolved')) phrase[lastIdx].degree = rand([0,0,2,4].filter(x=>x<c.scale.length));
+  if(phase==='response' && c.endingBehaviour.includes('more tense')) phrase[lastIdx].degree = rand([1,3,5].filter(x=>x<c.scale.length));
+}
+
+function buildCall(c){
+  const sp = styleProfile(c);
+  const cat = styleCategory(c.style);
+  const motif = motifTemplate(c);
+  const pool = notePool(c);
+  const steps = c.steps;
+  const out = [];
+  const densTarget = densityValue(c.densityPreset);
+  const repTarget = repetitionValue(c.repetitionPreset);
+  const contourMode = contourBias(c.contourPreset);
+
+  let center=0;
+  if(c.registerProfile==='Narrow register') center=0;
+  else if(c.registerProfile==='Medium register') center=rand([0,1,2]);
+  else center=rand([0,1,2,3]);
+
+  const motifSteps = [];
+  let prevDeg = center + rand([0,0,1,-1]);
+
+  for(let m=0;m<motif.len;m++){
+    let active = motif.rhythm[m];
+    if(chance(sp.restBias + (1-densTarget)*0.25)) active = active && chance(0.68);
+    let deg = prevDeg;
+
+    if(m===0 && chance(sp.rootBias)) deg = rand([0,0,1,2].filter(x=>x<c.scale.length));
+    else{
+      const contour = motif.contour[m] ?? 0;
+      if(contourMode===100 && m>0) deg = prevDeg + rand([-1,0,1]);
+      else if(contourMode===101 && m>0 && chance(0.35)) deg = prevDeg + rand([-3,-2,2,3]);
+      else if(contourMode===1) deg = prevDeg + Math.max(0, contour) + rand([-1,0,1]);
+      else if(contourMode===-1) deg = prevDeg + Math.min(0, contour) + rand([-1,0,1]);
+      else if(contourMode===2) deg = prevDeg + (m < Math.ceil(motif.len/2) ? 1 : -1) + rand([-1,0,1]);
+      else if(contourMode===-2) deg = prevDeg + (m < Math.ceil(motif.len/2) ? -1 : 1) + rand([-1,0,1]);
+      else if(chance(0.65)) deg = prevDeg + contour + rand([-1,0,0,1]);
+      else deg = rand(pool) + rand([0,0,Math.max(0,Math.floor(center/2))]);
+    }
+
+    if(chance(sp.leap * (contourMode===101 ? 1.45 : 1))) deg += rand([-3,3]);
+    if(cat==='acid' && chance(sp.syncBias)) deg += rand([-1,0,1]);
+    if(cat==='house' && chance(sp.offbeatBias) && m%2===1) deg += rand([0,1]);
+    if(cat==='techno' && chance(sp.rootBias*0.4)) deg = rand([0,0,2,4].filter(x=>x<c.scale.length));
+    deg = clamp(deg, 0, c.registerProfile==='Wide register' ? 11 : (c.registerProfile==='Medium register' ? 8 : 6));
+    prevDeg = deg;
+    const art = articulationForStep(m, active, c, m);
+    motifSteps.push({active, degree:active?deg:null, dur:1, ...art});
+  }
+
+  if(!motifSteps.some(s=>s.active)){
+    motifSteps[0].active = true;
+    motifSteps[0].degree = 0;
+  }
+
+  for(let i=0;i<steps;i++){
+    const m = i % motif.len;
+    const block = Math.floor(i / motif.len);
+    let step = {...motifSteps[m]};
+
+    if(block>0){
+      if(chance(repTarget)) step = {...motifSteps[m]};
+      else{
+        if(step.active && step.degree!=null){
+          const spread = c.repetitionPreset==='Highly varied' ? [-3,-2,-1,0,1,2,3] : [-2,-1,0,1,2];
+          step.degree = clamp(step.degree + rand(spread), 0, c.registerProfile==='Wide register' ? 11 : 8);
+        }
+        if(chance(sp.motifVar + (1-repTarget)*0.25)) step.active = !step.active ? chance(0.38) : step.active;
+      }
+      if(i >= Math.floor(steps*0.75) && step.active && chance(sp.stableEnd)) {
+        step.degree = clamp(step.degree + rand([-1,0,1]), 0, 10);
+      }
+    }
+
+    const styleAct = preferredStepActivation(cat, i);
+    const dens = Math.min(0.98, Math.max(0.05, (densTarget*0.6) + (styleAct*0.4)));
+    if(chance(1-dens)) step.active = step.active && chance(dens);
+
+    if(step.active && chance(sp.rootBias*0.4) && i % Math.max(2,motif.len) === 0){
+      step.degree = rand([0,0,2,4].filter(x=>x<c.scale.length));
+    }
+    if(cat==='house' && step.active && i%2===1 && chance(sp.offbeatBias)) step.gate = Math.max(step.gate||0.8, 0.95);
+    if(cat==='techno' && step.active && i%4===0 && chance(0.4)) step.accent = true;
+
+    if(!step.active) step.degree = null;
+    out.push(step);
+  }
+
+  if(c.repetitionPreset==='Very repetitive' || c.repetitionPreset==='Repetitive'){
+    const cloneLen = Math.min(motif.len, Math.floor(steps/2));
+    for(let i=cloneLen;i<steps;i++){
+      if(chance(c.repetitionPreset==='Very repetitive' ? 0.9 : 0.72)){
+        const src = out[i % cloneLen];
+        out[i] = {...src, ...(articulationForStep(i, src.active, c, i%motif.len))};
+      }
+    }
+  }
+
+  applyEnding(out, c, 'call');
+  postProcessArticulation(out, c);
+  return out;
+}
+
+function buildResponse(call,c){
+  const steps = c.steps;
+  const out = call.map(s=>({...s}));
+  const rt = c.responseStrategy;
+  const sp = styleProfile(c);
+  const motif = motifFromCall(call, steps);
+  const motifLen = motif.length;
+  const activeDegrees = call.filter(s=>s.active && s.degree!=null).map(s=>s.degree);
+  const avgDeg = activeDegrees.length ? activeDegrees.reduce((a,b)=>a+b,0)/activeDegrees.length : 0;
+  let respPool = notePool(c);
+  if(c.notePoolMode==='Pool expands on response') respPool = [...Array(Math.min(c.scale.length,7)).keys()];
+  else if(c.notePoolMode==='Pool contracts on response') respPool = stableDegreesForScale(c);
+  const callContour = phraseContour(call);
+  const stable = stableDegreesForScale(c);
+  const copyRhythm = call.map(s=>!!s.active);
+
+  const mapMotif = (fn) => {
+    for(let i=0;i<steps;i++){
+      const base = motif[i % motifLen];
+      out[i] = {...base};
+      if(out[i].active && out[i].degree!=null){
+        let d = fn(base.degree, i, base);
+        if(chance(sp.responseTightness*0.28) && respPool.length){
+          d = rand(respPool) + Math.floor(d / Math.max(1,c.scale.length)) * Math.max(1,c.scale.length);
+        }
+        out[i].degree = clamp(d, 0, 10);
+      } else out[i].degree = null;
+    }
+  };
+
+  if(rt==='Same rhythm + resolve'){
+    for(let i=0;i<steps;i++){
+      out[i].active = copyRhythm[i];
+      out[i].degree = out[i].active ? clamp((call[i].degree??0) + rand([-1,0,0,1]),0,10) : null;
+    }
+  }
+  else if(rt==='Same rhythm + new contour'){
+    const dir = callContour >= 0 ? -1 : 1;
+    for(let i=0;i<steps;i++){
+      out[i].active = copyRhythm[i];
+      out[i].degree = out[i].active ? clamp((call[i].degree??0) + dir*Math.floor(i/Math.max(2,steps/4)) + rand([-1,0,1]),0,10) : null;
+    }
+  }
+  else if(rt==='Motif + simplify'){
+    mapMotif((deg)=>deg + rand([-1,0,0,1]));
+    for(let i=0;i<steps;i++){ out[i].active = out[i].active && chance(i%2===0 ? 1 : 0.35); if(!out[i].active) out[i].degree=null; }
+  }
+  else if(rt==='Motif + extend'){
+    mapMotif((deg)=>deg + rand([-1,0,1]));
+    for(let i=1;i<steps;i++){
+      if(!out[i].active && out[i-1].active && chance(0.42)){ out[i].active=true; out[i].degree=out[i-1].degree; out[i].tie=true; out[i].gate=Math.max(out[i].gate||0.8,1.0); }
+    }
+  }
+  else if(rt==='Motif + truncate'){
+    mapMotif((deg)=>deg + rand([-1,0,1]));
+    for(let i=Math.floor(steps*0.65); i<steps; i++){ if(chance(0.65)){ out[i].active=false; out[i].degree=null; } }
+  }
+  else if(rt==='Echo' || rt==='Delayed answer'){
+    for(let i=0;i<steps;i++){
+      const src = call[(i-2+steps)%steps];
+      out[i].active = src.active;
+      out[i].degree = out[i].active ? clamp((src.degree??0)+rand([-1,0,1]),0,10) : null;
+    }
+    if(rt==='Delayed answer'){
+      for(let i=steps-1;i>0;i--) out[i] = {...out[i-1]};
+      out[0] = {active:false, degree:null, gate:0.6, accent:false, slide:false, tie:false, dur:1};
+    }
+  }
+  else if(rt==='Answer upward' || rt==='Higher answer') mapMotif((deg)=>deg + rand([1,2,3]));
+  else if(rt==='Answer downward' || rt==='Lower answer') mapMotif((deg)=>deg - rand([1,1,2]));
+  else if(rt==='Invert contour' || rt==='Mirror contour loosely') mapMotif((deg)=>Math.round(avgDeg - (deg-avgDeg)) + rand([-1,0,1]));
+  else if(rt==='Copy rhythm / change notes'){
+    for(let i=0;i<steps;i++){ out[i].active = copyRhythm[i]; out[i].degree = out[i].active ? clamp(rand(respPool)+rand([0,0,2]),0,10) : null; }
+  }
+  else if(rt==='Copy notes / change rhythm'){
+    for(let i=0;i<steps;i++){ out[i].degree = call[i].degree; out[i].active = chance(call[i].active?0.68:0.22); if(!out[i].active) out[i].degree=null; }
+  }
+  else if(rt==='Transpose motif up') mapMotif((deg)=>deg + rand([2,3,4]));
+  else if(rt==='Transpose motif down') mapMotif((deg)=>deg - rand([2,2,3]));
+  else if(rt==='Response resolves to root'){
+    mapMotif((deg)=>deg + rand([-1,0,1]));
+    for(let i=Math.max(0,steps-3); i<steps; i++) if(out[i].active) out[i].degree = rand([0,0,2].filter(x=>x<c.scale.length));
+  }
+  else if(rt==='Response resolves to 5th'){
+    mapMotif((deg)=>deg + rand([-1,0,1]));
+    for(let i=Math.max(0,steps-3); i<steps; i++) if(out[i].active) out[i].degree = rand([4,2,0].filter(x=>x<c.scale.length));
+  }
+  else if(rt==='Response resolves lower'){
+    mapMotif((deg)=>deg - rand([1,2]));
+    for(let i=Math.max(0,steps-2); i<steps; i++) if(out[i].active) out[i].degree = clamp((out[i].degree??0)-1,0,10);
+  }
+  else if(rt==='Response resolves harder'){
+    mapMotif((deg)=>deg + rand([-1,0,1]));
+    for(let i=Math.max(0,steps-4); i<steps; i++) if(out[i].active){ out[i].degree = rand(stable.length?stable:[0]); out[i].accent = true; }
+  }
+  else if(rt==='Repeat then break'){
+    mapMotif((deg)=>deg + rand([-1,0,1]));
+    for(let i=0;i<steps-2;i++) if(chance(0.72)) out[i] = {...call[i]};
+    if(out[steps-2].active) out[steps-2].degree = clamp((out[steps-2].degree??0)+rand([2,3,-2]),0,10);
+    if(out[steps-1].active) out[steps-1].degree = rand(stable.length?stable:[0]);
+  }
+  else if(rt==='Tighter answer'){
+    mapMotif((deg)=>deg + rand([-1,0,1]));
+    for(let i=0;i<steps;i++){ if(out[i].active){ out[i].gate = 0.48 + (i%2===0 ? 0.04 : 0); out[i].accent = chance(0.3); } }
+  }
+  else if(rt==='Sparser answer'){
+    mapMotif((deg)=>deg + rand([-1,0,1]));
+    for(let i=0;i<steps;i++){ out[i].active = out[i].active && chance(i%2===0 ? 0.85 : 0.22); if(!out[i].active) out[i].degree=null; }
+  }
+  else if(rt==='Busier answer'){
+    mapMotif((deg)=>deg + rand([-1,0,1]));
+    for(let i=0;i<steps;i++){ if(!out[i].active && chance(0.3)){ out[i].active=true; out[i].degree = out[Math.max(0,i-1)].degree ?? rand(respPool); } }
+  }
+  else if(rt==='Accent the answer'){
+    mapMotif((deg)=>deg + rand([-1,0,1]));
+    for(let i=0;i<steps;i++) out[i].accent = out[i].active && (i%2===0 || chance(0.22));
+  }
+  else if(rt==='Slide the answer'){
+    mapMotif((deg)=>deg + rand([-1,0,1]));
+    for(let i=0;i<steps;i++){ out[i].slide = out[i].active && chance(0.34); out[i].gate = Math.max(out[i].gate||0.8, 1.0); }
+  }
+  else if(rt==='Staccato answer'){
+    mapMotif((deg)=>deg + rand([-1,0,1]));
+    for(let i=0;i<steps;i++){ out[i].gate = 0.42; out[i].tie=false; }
+  }
+  else if(rt==='Legato answer'){
+    mapMotif((deg)=>deg + rand([-1,0,1]));
+    for(let i=0;i<steps;i++){ out[i].gate = 1.08; out[i].tie = out[i].active && chance(0.18); }
+  }
+  else if(rt==='Half-phrase answer'){
+    mapMotif((deg)=>deg + rand([-1,0,1]));
+    for(let i=0;i<Math.floor(steps/2); i++){ out[i].active=false; out[i].degree=null; }
+  }
+  else if(rt==='Fragment reply' || rt==='Tail answer'){
+    const start = rt==='Tail answer' ? Math.floor(steps/2) : Math.floor(steps/3);
+    for(let i=0;i<steps;i++){
+      const src = call[(start+i)%steps];
+      out[i].active = src.active && chance(0.88);
+      out[i].degree = out[i].active ? clamp((src.degree??0)+rand([-1,0,1]),0,10) : null;
+    }
+  }
+  else if(rt==='Opposite register') mapMotif((deg)=>deg + (c.registerProfile==='Wide register' ? -3 : 3));
+  else if(rt==='Same motif darker') mapMotif((deg)=>deg - 1);
+  else if(rt==='Same motif brighter') mapMotif((deg)=>deg + 1);
+  else if(rt==='Question then closure'){
+    mapMotif((deg)=>deg + rand([-1,0,1]));
+    const qEnd = [1,3,5].filter(x=>x<c.scale.length);
+    if(out[steps-2] && out[steps-2].active) out[steps-2].degree = rand(qEnd.length?qEnd:[1]);
+    if(out[steps-1] && out[steps-1].active) out[steps-1].degree = rand(stable.length?stable:[0]);
+  }
+  else if(rt==='Hook then fill'){
+    for(let i=0;i<steps;i++){
+      if(i < Math.floor(steps/2)) out[i] = {...call[i]};
+      else{
+        const src = motif[i % motifLen];
+        out[i] = {...src};
+        if(out[i].active && out[i].degree!=null) out[i].degree = clamp(src.degree + rand([-2,-1,1,2]),0,10);
+      }
+    }
+  }
+  else if(rt==='Call dominant / response tonic'){
+    mapMotif((deg)=>deg + rand([-1,0,1]));
+    const dominantish = [4,1,5].filter(x=>x<c.scale.length);
+    for(let i=0;i<steps;i++){
+      if(i < Math.floor(steps/2) && out[i].active) out[i].degree = rand(dominantish.length?dominantish:[1]);
+      if(i >= Math.floor(steps/2) && out[i].active && chance(0.55)) out[i].degree = rand(stable.length?stable:[0]);
+    }
+  }
+  else mapMotif((deg)=>deg + rand([-1,0,1]));
+
+  for(let i=0;i<steps;i++){
+    if(out[i].active && call[i] && call[i].active && chance(sp.responseTightness)){
+      out[i].degree = clamp(Math.round((out[i].degree + call[i].degree)/2), 0, 10);
+    }
+    const a = articulationForStep(i, out[i].active, c, i%motifLen);
+    out[i] = {...out[i], ...a, gate: out[i].gate ?? a.gate};
+    if(!out[i].active) out[i].degree = null;
+  }
+  applyEnding(out,c,'response');
+  postProcessArticulation(out,c);
+  return out;
+}
+
+function mutatePhrase(phrase,c,target='Whole phrase'){
+  if(target==='Call + response linked') target='Whole phrase';
+  const out = phrase.map(s=>({...s}));
+  const amt = {'Tiny':1,'Small':2,'Medium':3,'Strong':5,'Brutal':Math.max(4, Math.floor(out.length*0.7))}[c.mutationAmount] || 3;
+  const idxs = pickN([...Array(out.length).keys()], amt);
+  idxs.forEach(i=>{
+    if(target==='Rhythm only' || target==='Whole phrase' || target==='Call only' || target==='Response only'){
+      if(chance(0.7)) out[i].active = !out[i].active;
+    }
+    if((target==='Pitch only' || target==='Whole phrase' || target==='Call only' || target==='Response only') && out[i].active){
+      out[i].degree = clamp((out[i].degree??0)+rand([-2,-1,1,2]),0,10);
+    }
+    if(target==='Articulation only' || target==='Whole phrase'){
+      const a = articulationForStep(i, out[i].active, c, i%4);
+      out[i] = {...out[i], ...a};
+    }
+    if(target==='Ending only' && i===out.length-1) applyEnding(out,c,'call');
+    if(target==='Motif only'){
+      const src = i % Math.max(2, Math.floor(out.length/4));
+      out[i] = {...out[src]};
+    }
+    if(!out[i].active) out[i].degree = null;
+  });
+  return out;
+}
+
+function renderPhrase(phrase,id,phase,c){
+  const root = el(id);
+  root.innerHTML = '';
+  for(let i=0;i<16;i++){
+    const d = document.createElement('div');
+    d.className = 'step';
+    d.dataset.phase = phase;
+    d.dataset.idx = i;
+    const s = phrase[i];
+    const beyond = i >= c.steps;
+    if(beyond) d.classList.add('inactiveStep');
+    if(s && s.active && s.degree!=null && !beyond){
+      const name = midiToName(degreeToMidi(s.degree,c));
+      const flags = [s.accent?'A':'', s.slide?'S':'', s.tie?'T':''].filter(Boolean).join(' ');
+      d.innerHTML = `<div class="idx">Step ${i+1}</div>
+        <div class="name">${name}</div>
+        <div class="meta">${flags || ''}</div>`;
+    } else {
+      d.innerHTML = `<div class="idx">Step ${i+1}</div><div class="name">&nbsp;</div><div class="meta">&nbsp;</div>`;
+    }
+    root.appendChild(d);
+  }
+}
+
+function renderAll(){
+  const c=cfg();
+  renderPhrase(state.call,'callGrid','call',c);
+  renderPhrase(state.response,'responseGrid','response',c);
+}
+
+
+
+function delayedRestart(ms=200){
+  if(state.restartDebounce) clearTimeout(state.restartDebounce);
+  hardPanic(false);
+  const token = ++state.runToken;
+  state.restartDebounce = setTimeout(()=>{
+    if(token === state.runToken) startPlayback();
+  }, ms);
+}
+function restartIfPlaying(){
+  if(!state.playing) return;
+  delayedRestart(200);
+}
+function regenerate(which='both'){
+  const c=cfg();
+  if(which==='call' || which==='both') state.call = buildCall(c);
+  if(which==='response' || which==='both') state.response = buildResponse(state.call,c);
+  renderAll();
+  restartIfPlaying();
+}
+
+function randomize(kind){
+  state.seed = Math.random();
+
+  if(kind==='motif') el('motifType').value = rand(DATA.motifTypes);
+  else if(kind==='strategy') el('responseStrategy').value = rand(DATA.responseStrategies);
+  else if(kind==='style') el('style').value = rand(DATA.styles);
+  else if(kind==='keyscale'){
+    el('key').value = rand(DATA.keys);
+    el('scale').value = rand(DATA.scales);
+  }
+  else if(kind==='art'){
+    el('articulationProfile').value = rand(DATA.articulationProfiles);
+    el('gateFeel').value = rand(DATA.gateFeels);
+    el('connectionFeel').value = rand(DATA.connectionFeels);
+    el('slideProfile').value = rand(DATA.slideProfiles);
+    el('accentProfile').value = rand(DATA.accentProfiles);
+  }
+  else if(kind==='sound') el('soundEngine').value = rand(DATA.soundEngines);
+  else if(kind==='phrase') el('phraseMode').value = rand(DATA.phraseModes);
+
+  else if(kind==='call'){
+    state.call = buildCall(cfg());
+    renderAll();
+    if(state.playing) delayedRestart(200);
+    return;
+  }
+  else if(kind==='response'){
+    state.response = buildResponse(state.call, cfg());
+    renderAll();
+    if(state.playing) delayedRestart(200);
+    return;
+  }
+  else if(kind==='both'){
+    regenerate('both');
+    if(state.playing) delayedRestart(200);
+    return;
+  }
+  else if(kind==='allx'){
+    ['style','responseStrategy','motifType','phraseMode','endingBehaviour','key','scale','rootOctave','steps','registerProfile','densityPreset','contourPreset','repetitionPreset','mutationAmount','mutationTarget','notePoolMode','articulationProfile','gateFeel','connectionFeel','slideProfile','accentProfile','soundEngine'].forEach(id=>{
+      const sel = el(id);
+      if(sel && sel.options && sel.options.length) sel.value = rand([...sel.options].map(o=>o.value));
+    });
+    regenerate('both');
+    if(state.playing) delayedRestart(200);
+    return;
+  }
+  else if(kind==='keeprhythm'){
+    state.call = state.call.map(s=>({...s, degree:s.active ? clamp((s.degree??0)+rand([-2,-1,1,2]),0,10) : null}));
+    state.response = buildResponse(state.call, cfg());
+    renderAll();
+    if(state.playing) delayedRestart(200);
+    return;
+  }
+  else if(kind==='keeppitch'){
+    state.call = state.call.map(s=>({...s, active:chance(s.active?0.72:0.28)}));
+    state.call.forEach(s=>{ if(!s.active) s.degree = null; });
+    state.response = buildResponse(state.call, cfg());
+    renderAll();
+    if(state.playing) delayedRestart(200);
+    return;
+  }
+  else if(kind==='keepmotif'){
+    const c = cfg();
+    const motif = state.call.slice(0, Math.min(4,state.call.length)).map(s=>({...s}));
+    state.call = Array.from({length:c.steps}, (_,i)=> ({...motif[i%motif.length], ...(articulationForStep(i,motif[i%motif.length].active,c,i%motif.length))}));
+    state.response = buildResponse(state.call, c);
+    renderAll();
+    if(state.playing) delayedRestart(200);
+    return;
+  }
+
+  regenerate('both');
+  if(state.playing) delayedRestart(200);
+}
+
+// Audio
+function controlToGain(val, maxGain=0.5){
+  const x = Math.max(0, Math.min(100, Number(val))) / 100;
+  return Math.pow(x, 2) * maxGain;
+}
+function ensureAudio(){
+  if(!state.audioCtx){
+    state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    state.master = state.audioCtx.createGain();
+    state.muteGate = state.audioCtx.createGain();
+    state.master.gain.value = controlToGain(el('masterLevel')?.value || 55, 0.5);
+    state.muteGate.gain.value = 1.0;
+    state.master.connect(state.muteGate);
+    state.muteGate.connect(state.audioCtx.destination);
+  } else if(state.master){
+    state.master.gain.value = controlToGain(el('masterLevel')?.value || 55, 0.5);
+  }
+}
+function voicePreset(name){
+  const n = name.toLowerCase();
+  let osc='sawtooth', osc2Type='square', filter=1000, q=2.5, atk=0.004, dec=0.08, sus=0.55, rel=0.12, detune=0, mix2=0.15, hp=0;
+  let sub=0.0, noise=0.0, drive=0.0, envAmt=220, filterFollow=0.0, panSpread=0.0;
+
+  if(n==='acid mono'){ osc='sawtooth'; osc2Type='square'; filter=620; q=9.5; detune=5; mix2=0.28; sub=0.12; drive=0.22; envAmt=420; }
+  else if(n==='warm mono'){ osc='triangle'; osc2Type='sawtooth'; filter=1350; q=1.8; mix2=0.10; sub=0.20; envAmt=120; }
+  else if(n==='square bass'){ osc='square'; osc2Type='square'; filter=900; q=2.8; mix2=0.12; sub=0.22; envAmt=170; }
+  else if(n==='pulse bass'){ osc='square'; osc2Type='square'; filter=980; q=3.6; mix2=0.20; detune=7; envAmt=200; }
+  else if(n==='sub bass'){ osc='sine'; osc2Type='triangle'; filter=650; q=1.1; mix2=0.06; sub=0.52; envAmt=80; }
+  else if(n==='pluck'){ osc='triangle'; osc2Type='square'; filter=1850; q=2.4; atk=0.002; dec=0.035; sus=0.08; rel=0.045; mix2=0.12; envAmt=320; }
+  else if(n==='clean lead'){ osc='sawtooth'; osc2Type='triangle'; filter=1500; q=2.0; mix2=0.14; envAmt=150; }
+  else if(n==='hollow lead'){ osc='square'; osc2Type='triangle'; filter=1450; q=2.7; hp=170; mix2=0.20; envAmt=180; }
+  else if(n==='fm-ish'){ osc='triangle'; osc2Type='sine'; filter=1450; q=2.0; mix2=0.25; detune=11; envAmt=210; }
+  else if(n==='dirty mono'){ osc='square'; osc2Type='sawtooth'; filter=760; q=5.0; mix2=0.22; sub=0.10; noise=0.01; drive=0.26; envAmt=260; }
+  else if(n==='resonant mono'){ osc='sawtooth'; osc2Type='triangle'; filter=700; q=11.0; mix2=0.10; envAmt=500; }
+  else if(n==='lo-fi mono'){ osc='triangle'; osc2Type='square'; filter=980; q=2.9; mix2=0.10; detune=6; drive=0.10; envAmt=140; }
+
+  return {osc, osc2Type, filter, q, atk, dec, sus, rel, detune, mix2, hp, sub, noise, drive, envAmt, filterFollow, panSpread};
+}
+
+function scheduleTone(midi,start,duration,step,c,phase,nextMidi=null){
+  ensureAudio();
+  const ctx = state.audioCtx;
+  const v = voicePreset(c.soundEngine);
+  const freq = 440 * Math.pow(2,(midi-69)/12);
+
+  // Pattern-driven duration, intentionally less choppy.
+  let gateVal = (step.gate || 0.82) * ((c.noteLengthPct || 100) / 100);
+  // Same-note successive steps should feel closer to tied unless explicitly choppy
+  if(nextMidi != null && nextMidi === midi && !step.slide){
+    gateVal = Math.max(gateVal, 1.18);
+  }
+  const hold = Math.max(0.04, duration * gateVal * (step.tie ? 1.22 : 1.0));
+  const endTime = start + hold;
+
+  const osc = ctx.createOscillator();
+  osc.type = v.osc;
+  osc.frequency.setValueAtTime(freq, start);
+
+  let osc2=null, gain2=null;
+  if(v.mix2 > 0){
+    osc2 = ctx.createOscillator();
+    gain2 = ctx.createGain();
+    osc2.type = v.osc2Type || v.osc;
+    osc2.frequency.setValueAtTime(freq, start);
+    osc2.detune.value = v.detune || 0;
+    gain2.gain.value = v.mix2;
+  }
+
+  let subOsc=null, subGain=null;
+  if(v.sub > 0){
+    subOsc = ctx.createOscillator();
+    subGain = ctx.createGain();
+    subOsc.type='sine';
+    subOsc.frequency.setValueAtTime(freq/2, start);
+    subGain.gain.value = v.sub * (step.accent ? 0.9 : 0.7);
+  }
+
+  let noiseSrc=null, noiseFilter=null, noiseGain=null;
+  if(v.noise > 0){
+    const noiseBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * Math.max(0.05, hold + 0.08)), ctx.sampleRate);
+    const data = noiseBuf.getChannelData(0);
+    for(let i=0;i<data.length;i++) data[i] = (Math.random()*2-1) * 0.35;
+    noiseSrc = ctx.createBufferSource();
+    noiseSrc.buffer = noiseBuf;
+    noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type='bandpass';
+    noiseFilter.frequency.value = 1800;
+    noiseFilter.Q.value = 0.8;
+    noiseGain = ctx.createGain();
+    noiseGain.gain.value = v.noise * (step.accent ? 1.4 : 1.0);
+  }
+
+  const lp = ctx.createBiquadFilter();
+  lp.type='lowpass';
+  const baseFilter = v.filter + (phase==='response' ? -80 : 0);
+  lp.frequency.setValueAtTime(baseFilter + (step.accent ? 900 : 0), start);
+  lp.Q.value = v.q + (step.accent ? 1.5 : 0);
+
+  let entryNode = lp;
+  if(v.hp > 0){
+    const hp = ctx.createBiquadFilter();
+    hp.type='highpass';
+    hp.frequency.value = v.hp;
+    hp.Q.value = 0.7;
+    hp.connect(lp);
+    entryNode = hp;
+  }
+
+  const panner = ctx.createStereoPanner();
+  panner.pan.value = phase==='call' ? -Math.abs(v.panSpread||0) : Math.abs(v.panSpread||0);
+
+  const gain = ctx.createGain();
+  const peak = step.accent ? 0.30 : 0.16;
+
+  // Hold sustain much longer before release
+  const attack = step.accent ? Math.max(0.0015, v.atk*0.6) : v.atk;
+  const sustainLevel = Math.max(0.0001, peak * Math.max(0.45, v.sus));
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(peak, start + attack);
+  gain.gain.exponentialRampToValueAtTime(sustainLevel, start + Math.min(hold*0.12, attack + v.dec));
+  gain.gain.setValueAtTime(sustainLevel, Math.max(start + Math.min(hold*0.12, attack + v.dec), endTime - Math.max(0.012, v.rel)));
+  gain.gain.exponentialRampToValueAtTime(0.0001, endTime);
+
+  let shaper = null;
+  if(v.drive > 0){
+    shaper = ctx.createWaveShaper();
+    const curve = new Float32Array(256);
+    const k = 2 + v.drive * 18;
+    for(let i=0;i<256;i++){
+      const x = (i/255)*2 - 1;
+      curve[i] = Math.tanh(k*x) / Math.tanh(k);
+    }
+    shaper.curve = curve;
+    shaper.oversample = '2x';
+  }
+
+  if(step.slide && nextMidi != null){
+    const nextFreq = 440 * Math.pow(2,(nextMidi-69)/12);
+    const glideTime = start + Math.max(0.03, hold*0.92);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(10,nextFreq), glideTime);
+    if(osc2) osc2.frequency.exponentialRampToValueAtTime(Math.max(10,nextFreq), glideTime);
+    if(subOsc) subOsc.frequency.exponentialRampToValueAtTime(Math.max(5,nextFreq/2), glideTime);
+    lp.frequency.linearRampToValueAtTime(baseFilter + v.envAmt + (step.accent ? 1100 : 380), glideTime);
+  } else {
+    lp.frequency.linearRampToValueAtTime(baseFilter + v.envAmt + (step.accent ? 900 : 240), start + Math.min(hold*0.18, 0.06));
+    lp.frequency.linearRampToValueAtTime(baseFilter * 0.92, endTime);
+  }
+
+  osc.connect(entryNode);
+  if(osc2){ osc2.connect(gain2); gain2.connect(entryNode); }
+  if(subOsc){ subOsc.connect(subGain); subGain.connect(entryNode); }
+  if(noiseSrc){ noiseSrc.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(entryNode); }
+
+  if(shaper){ lp.connect(shaper); shaper.connect(panner); }
+  else lp.connect(panner);
+  panner.connect(gain);
+  gain.connect(state.master);
+
+  osc.start(start); osc.stop(endTime + 0.04);
+  if(osc2){ osc2.start(start); osc2.stop(endTime + 0.04); }
+  if(subOsc){ subOsc.start(start); subOsc.stop(endTime + 0.04); }
+  if(noiseSrc){ noiseSrc.start(start); noiseSrc.stop(endTime + 0.04); }
+}
+
+function sequenceChunks(target,c){
+  const stepDur = 60 / c.tempo / 2;
+  const chunks = [];
+  const call = state.call, resp = state.response;
+
+  // Always audition the pair, call then response.
+  // Phrase mode still affects internal generation and export timing variants where relevant,
+  // but transport is intentionally simplified.
+  if(c.phraseMode==='Call, call, response'){
+    chunks.push({phase:'call', phrase:call, start:0, offset:0});
+    chunks.push({phase:'call', phrase:call, start:call.length*stepDur, offset:0});
+    chunks.push({phase:'response', phrase:resp, start:call.length*stepDur*2, offset:0});
+  } else if(c.phraseMode==='Call, response, response'){
+    chunks.push({phase:'call', phrase:call, start:0, offset:0});
+    chunks.push({phase:'response', phrase:resp, start:call.length*stepDur, offset:0});
+    chunks.push({phase:'response', phrase:resp, start:(call.length+resp.length)*stepDur, offset:0});
+  } else {
+    chunks.push({phase:'call', phrase:call, start:0, offset:0});
+    chunks.push({phase:'response', phrase:resp, start:call.length*stepDur, offset:0});
+  }
+
+  return {chunks, stepDur, total: Math.max(...chunks.map(ch=>ch.start + ch.phrase.length*stepDur),0)};
+}
+function clearPlayHighlights(){ document.querySelectorAll('.step.activePlay').forEach(n=>n.classList.remove('activePlay')); }
+function highlight(phase, idx){
+  clearPlayHighlights();
+  const q = `.step[data-phase="${phase}"][data-idx="${idx}"]`;
+  const node = document.querySelector(q);
+  if(node) node.classList.add('activePlay');
+}
+
+function scheduleMetronome(base, total, stepDur, c){
+  if(el('metronomeOn').value !== 'On') return;
+  const beats = Math.max(1, Math.round(total / (60 / c.tempo)));
+  const beatDur = 60 / c.tempo;
+  const level = controlToGain(el('metronomeLevel').value, 0.8);
+  for(let i=0;i<beats;i++){
+    const t = base + i*beatDur;
+    const ctx = state.audioCtx;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    osc.type = 'square';
+    osc.frequency.value = i===0 ? 2400 : 1550;
+    filter.type = 'bandpass';
+    filter.frequency.value = i===0 ? 2200 : 1450;
+    filter.Q.value = 1.0;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(level + (i===0 ? 0.08 : 0.0), t + 0.0015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+    osc.connect(filter); filter.connect(gain); gain.connect(state.master);
+    osc.start(t); osc.stop(t + 0.08);
+  }
+}
+function shiftPhrase(phrase, dir){
+  if(!phrase.length) return phrase;
+  const out = phrase.map(s=>({...s}));
+  if(dir < 0){
+    const first = out.shift();
+    out.push(first);
+  } else {
+    const last = out.pop();
+    out.unshift(last);
+  }
+  return out;
+}
+
+function hardPanic(invalidateToken=true){
+  state.playing = false;
+  if(invalidateToken) state.runToken += 1;
+  if(state.uiTimer){ clearInterval(state.uiTimer); state.uiTimer = null; }
+  if(state.loopTimer){ clearInterval(state.loopTimer); clearTimeout(state.loopTimer); state.loopTimer = null; }
+  if(state.restartDebounce){ clearTimeout(state.restartDebounce); state.restartDebounce = null; }
+  clearPlayHighlights();
+  el('btnPlay').textContent = 'Play';
+
+  if(state.audioCtx){
+    try{
+      const oldCtx = state.audioCtx;
+      state.audioCtx = null;
+      state.master = null;
+      state.muteGate = null;
+      oldCtx.close();
+    } catch(e){
+      state.audioCtx = null;
+      state.master = null;
+      state.muteGate = null;
+    }
+  }
+  setStatus('Panic.');
+}
+function startPlayback(targetOverride=null){
+  hardPanic(false);
+  ensureAudio();
+  const localToken = ++state.runToken;
+  const c = cfg();
+  const {chunks, stepDur, total} = sequenceChunks('Call then response loop', c);
+
+  state.playing = true;
+  el('btnPlay').textContent = 'Stop';
+  setStatus(el('metronomeOn').value === 'On' ? 'Playing call then response in loop with metronome.' : 'Playing call then response in loop.');
+
+  const playPass = (base)=>{
+    if(localToken !== state.runToken || !state.playing) return;
+    chunks.forEach(ch=>{
+      ch.phrase.forEach((step,i)=>{
+        if(!step.active || step.degree==null) return;
+        const start = base + ch.start + i*stepDur;
+        const dur = stepDur;
+        const midi = degreeToMidi(step.degree, c);
+        let nextMidi = null;
+        for(let j=i+1;j<ch.phrase.length;j++){
+          const ns = ch.phrase[j];
+          if(ns && ns.active && ns.degree!=null){ nextMidi = degreeToMidi(ns.degree, c); break; }
+        }
+        scheduleTone(midi,start,dur,step,c,ch.phase,nextMidi);
+      });
+    });
+    scheduleMetronome(base, total, stepDur, c);
+  };
+
+  const startMs = performance.now();
+  const baseStart = state.audioCtx.currentTime + 0.03;
+  playPass(baseStart);
+
+  state.uiTimer = setInterval(()=>{
+    if(localToken !== state.runToken || !state.playing){
+      clearInterval(state.uiTimer);
+      state.uiTimer = null;
+      return;
+    }
+    const elapsed = (performance.now() - startMs) / 1000;
+    const pos = elapsed % total;
+    let found = null;
+    for(const ch of chunks){
+      const end = ch.start + ch.phrase.length*stepDur;
+      if(pos >= ch.start && pos < end){
+        const local = Math.floor((pos - ch.start)/stepDur);
+        found = {phase:ch.phase, idx:(ch.offset||0)+local};
+        break;
+      }
+    }
+    if(found) highlight(found.phase, found.idx);
+  }, 35);
+
+  state.loopTimer = setInterval(()=>{
+    if(localToken !== state.runToken || !state.playing){
+      clearInterval(state.loopTimer);
+      state.loopTimer = null;
+      return;
+    }
+    const b = state.audioCtx.currentTime + 0.03;
+    playPass(b);
+  }, total*1000);
+}
+function stopPlayback(){
+  hardPanic(true);
+  setStatus('Stopped.');
+}
+
+// MIDI export
+function vlq(n){
+  let bytes=[n&0x7f]; n>>=7;
+  while(n){ bytes.push((n&0x7f)|0x80); n>>=7; }
+  return bytes.reverse();
+}
+function buildTrack(events){
+  const body=[]; events.forEach(ev=>body.push(...ev));
+  const len = body.length;
+  return [0x4d,0x54,0x72,0x6b,(len>>>24)&255,(len>>>16)&255,(len>>>8)&255,len&255,...body];
+}
+function midiEventsForChunks(chunks,c){
+  const stepTicks = 240;
+  const raw = [];
+  chunks.forEach(ch=>{
+    const channel = ch.phase === 'call' ? c.callChannel : c.responseChannel;
+    ch.phrase.forEach((step,i)=>{
+      if(!step.active || step.degree==null) return;
+      const tick = Math.floor((ch.start / (60 / c.tempo / 2)) * stepTicks) + i*stepTicks;
+      const durTicks = Math.max(20, Math.floor(stepTicks * (step.gate || 0.82) * (step.tie ? 1.1 : 1.0)));
+      const midi = degreeToMidi(step.degree, c);
+      const vel = step.accent ? 118 : 92;
+      raw.push({tick, msg:[0x90 | (channel&0x0f), midi&0x7f, vel&0x7f]});
+      raw.push({tick:tick+durTicks, msg:[0x80 | (channel&0x0f), midi&0x7f, 0]});
+    });
+  });
+  raw.sort((a,b)=> a.tick-b.tick || a.msg[0]-b.msg[0]);
+  const evs = [[...vlq(0), 0xc0 | (c.callChannel&0xf), 38], [...vlq(0), 0xc0 | (c.responseChannel&0xf), 39]];
+  let lastTick = 0;
+  raw.forEach(ev=>{
+    evs.push([...vlq(ev.tick-lastTick), ...ev.msg]);
+    lastTick = ev.tick;
+  });
+  evs.push([...vlq(0),0xff,0x2f,0x00]);
+  return evs;
+}
+
+function downloadBlob(blob, filename){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{
+    URL.revokeObjectURL(a.href);
+    a.remove();
+  }, 500);
+}
+function exportMidi(target){
+  const c = cfg();
+  const usPerQN = Math.floor(60000000 / Math.max(40, Math.min(300,c.tempo)));
+  const tempoTrack = buildTrack([
+    [...vlq(0), 0xff,0x51,0x03,(usPerQN>>>16)&255,(usPerQN>>>8)&255,usPerQN&255],
+    [...vlq(0), 0xff,0x58,0x04,4,2,24,8],
+    [...vlq(0), 0xff,0x2f,0x00]
+  ]);
+  let chunks;
+  if(target==='call') chunks = [{phase:'call', phrase:state.call, start:0, offset:0}];
+  else if(target==='response') chunks = [{phase:'response', phrase:state.response, start:0, offset:0}];
+  else if(target==='layered') chunks = [{phase:'call', phrase:state.call, start:0, offset:0}, {phase:'response', phrase:state.response, start:0, offset:0}];
+  else chunks = sequenceChunks('Call then response loop', c).chunks;
+
+  const track = buildTrack(midiEventsForChunks(chunks,c));
+  const header=[0x4d,0x54,0x68,0x64,0,0,0,6,0,1,0,2,0x01,0xE0];
+  const bytesOut = new Uint8Array([...header, ...tempoTrack, ...track]);
+  const blob = new Blob([bytesOut], {type:'audio/midi'});
+  const filename = target==='call' ? 'call.mid' : target==='response' ? 'response.mid' : target==='layered' ? 'layered.mid' : 'combined.mid';
+  downloadBlob(blob, filename);
+}
+
+
+function featureRealityReport(){
+  const real = [
+    'Key / scale',
+    'Steps',
+    'Register profile',
+    'Density preset',
+    'Contour preset',
+    'Repetition preset',
+    'Note pool mode',
+    'Motif type',
+    'Style weighting (acid / techno / house etc)',
+    'Response strategy',
+    'Ending behaviour',
+    'Articulation profiles / gate / slide / accent',
+    'Mutation amount / target',
+    'Browser playback',
+    'MIDI export'
+  ];
+  const thin = [
+    'Not every style is a fully bespoke composition engine',
+    'Sound engines are timbral variations, not entirely separate synth architectures',
+    'Phrase mode now has reduced transport impact because transport is simplified to always audition the pair',
+    'Routing/output/channel controls are mainly for export/config completeness rather than deep browser routing'
+  ];
+  return {real, thin};
+}
+
+
+function snapshotProject(){
+  return {
+    version: 1,
+    settings: cfg(),
+    call: Array.isArray(state.call) ? state.call.map(s=>({...s})) : [],
+    response: Array.isArray(state.response) ? state.response.map(s=>({...s})) : []
+  };
+}
+
+function applyLoadedProject(data){
+  const settings = (data && typeof data === 'object' && data.settings && typeof data.settings === 'object')
+    ? data.settings
+    : (data && typeof data === 'object' ? data : {});
+
+  Object.entries(settings).forEach(([k,v])=>{
+    const node = el(k);
+    if(node && typeof v !== 'object' && v !== undefined && v !== null){
+      node.value = String(v);
+    }
+  });
+
+  const validStep = (s) => s && typeof s === 'object' && Object.prototype.hasOwnProperty.call(s, 'active');
+  const loadedCall = Array.isArray(data?.call) ? data.call.filter(validStep).map(s=>({...s})) : null;
+  const loadedResponse = Array.isArray(data?.response) ? data.response.filter(validStep).map(s=>({...s})) : null;
+
+  state.call = loadedCall && loadedCall.length ? loadedCall : buildCall(cfg());
+  state.response = loadedResponse && loadedResponse.length ? loadedResponse : buildResponse(state.call, cfg());
+
+  renderAll();
+  if(state.playing) delayedRestart(200);
+}
+
+function init(){
+  fillSelect('soundEngine',DATA.soundEngines,DEFAULTS.soundEngine);
+  if(el('noteLengthPct')) el('noteLengthPct').value = DEFAULTS.noteLengthPct;
+  if(el('metronomeOn') && DEFAULTS.metronomeOn) el('metronomeOn').value = DEFAULTS.metronomeOn;
+  fillSelect('style',DATA.styles,DEFAULTS.style);
+  fillSelect('responseStrategy',DATA.responseStrategies,DEFAULTS.responseStrategy);
+  fillSelect('motifType',DATA.motifTypes,DEFAULTS.motifType);
+  fillSelect('phraseMode',DATA.phraseModes,DEFAULTS.phraseMode);
+  fillSelect('endingBehaviour',DATA.endingBehaviours,DEFAULTS.endingBehaviour);
+  fillSelect('key',DATA.keys,DEFAULTS.key);
+  fillSelect('scale',DATA.scales,DEFAULTS.scale);
+  fillSelect('rootOctave',DATA.octaves,DEFAULTS.rootOctave);
+  fillSelect('steps',DATA.steps,DEFAULTS.steps);
+  fillSelect('registerProfile',DATA.registerProfiles,DEFAULTS.registerProfile);
+  fillSelect('densityPreset',DATA.densityPresets,DEFAULTS.densityPreset);
+  fillSelect('contourPreset',DATA.contourPresets,DEFAULTS.contourPreset);
+  fillSelect('repetitionPreset',DATA.repetitionPresets,DEFAULTS.repetitionPreset);
+  fillSelect('mutationAmount',DATA.mutationAmounts,DEFAULTS.mutationAmount);
+  fillSelect('mutationTarget',DATA.mutationTargets,DEFAULTS.mutationTarget);
+  fillSelect('notePoolMode',DATA.notePoolModes,DEFAULTS.notePoolMode);
+  fillSelect('articulationProfile',DATA.articulationProfiles,DEFAULTS.articulationProfile);
+  fillSelect('gateFeel',DATA.gateFeels,DEFAULTS.gateFeel);
+  fillSelect('connectionFeel',DATA.connectionFeels,DEFAULTS.connectionFeel);
+  fillSelect('slideProfile',DATA.slideProfiles,DEFAULTS.slideProfile);
+  fillSelect('accentProfile',DATA.accentProfiles,DEFAULTS.accentProfile);
+  fillSelect('callLaneOutput',DATA.outputs,DEFAULTS.callLaneOutput);
+  fillSelect('responseLaneOutput',DATA.outputs,DEFAULTS.responseLaneOutput);
+  fillSelect('callChannel',DATA.channels,DEFAULTS.callChannel);
+  fillSelect('responseChannel',DATA.channels,DEFAULTS.responseChannel);
+
+  regenerate('both');
+  const rr = featureRealityReport();
+  setStatus(`Ready. Real features: ${rr.real.length}. Thin / mostly cosmetic: ${rr.thin.length}.`);
+
+  ['style','responseStrategy','motifType','phraseMode','endingBehaviour','key','scale','rootOctave','steps','registerProfile','densityPreset','contourPreset','repetitionPreset','mutationAmount','mutationTarget','notePoolMode','articulationProfile','gateFeel','connectionFeel','slideProfile','accentProfile'].forEach(id=>{
+    el(id).addEventListener('change', ()=> regenerate('both'));
+  });
+
+  el('tempo').addEventListener('input', ()=> restartIfPlaying());
+  el('masterLevel').addEventListener('input', ()=> { ensureAudio(); if(state.playing) delayedRestart(200); });
+  el('metronomeOn').addEventListener('change', ()=> restartIfPlaying());
+  el('metronomeLevel').addEventListener('input', ()=> { if(state.playing) delayedRestart(200); });
+  if(el('noteLengthPct')) el('noteLengthPct').addEventListener('input', ()=> { if(state.playing) delayedRestart(200); });
+  if(el('soundEngine')) el('soundEngine').addEventListener('change', ()=> { if(state.playing) delayedRestart(200); });
+
+  el('btnNewCall').onclick=()=>{ state.call = buildCall(cfg()); renderAll(); restartIfPlaying(); };
+  el('btnNewResponse').onclick=()=>{ state.response = buildResponse(state.call,cfg()); renderAll(); restartIfPlaying(); };
+  el('btnNewBoth').onclick=()=> regenerate('both');
+  el('btnMutateCall').onclick=()=>{ const c=cfg(); const t=(c.mutationTarget==='Response only'||c.mutationTarget==='Call + response linked')?'Whole phrase':c.mutationTarget; state.call = mutatePhrase(state.call,c,t); renderAll(); restartIfPlaying(); };
+  el('btnMutateResp').onclick=()=>{ const c=cfg(); const t=(c.mutationTarget==='Call only'||c.mutationTarget==='Call + response linked')?'Whole phrase':c.mutationTarget; state.response = mutatePhrase(state.response,c,t); renderAll(); restartIfPlaying(); };
+  el('btnMutateBoth').onclick=()=>{ const c=cfg(); const t=(c.mutationTarget==='Call only'||c.mutationTarget==='Response only'||c.mutationTarget==='Call + response linked')?'Whole phrase':c.mutationTarget; state.call = mutatePhrase(state.call,c,t); state.response = mutatePhrase(state.response,c,t); renderAll(); restartIfPlaying(); };
+  if(el('btnShiftCallLeft')) el('btnShiftCallLeft').onclick=()=>{ state.call = shiftPhrase(state.call,-1); renderAll(); restartIfPlaying(); };
+  if(el('btnShiftCallRight')) el('btnShiftCallRight').onclick=()=>{ state.call = shiftPhrase(state.call,1); renderAll(); restartIfPlaying(); };
+  if(el('btnShiftRespLeft')) el('btnShiftRespLeft').onclick=()=>{ state.response = shiftPhrase(state.response,-1); renderAll(); restartIfPlaying(); };
+  if(el('btnShiftRespRight')) el('btnShiftRespRight').onclick=()=>{ state.response = shiftPhrase(state.response,1); renderAll(); restartIfPlaying(); };
+  if(el('btnShiftBothLeft')) el('btnShiftBothLeft').onclick=()=>{ state.call = shiftPhrase(state.call,-1); state.response = shiftPhrase(state.response,-1); renderAll(); restartIfPlaying(); };
+  if(el('btnShiftBothRight')) el('btnShiftBothRight').onclick=()=>{ state.call = shiftPhrase(state.call,1); state.response = shiftPhrase(state.response,1); renderAll(); restartIfPlaying(); };
+  if(el('btnRandomPhraseSetup')) el('btnRandomPhraseSetup').onclick=()=>{
+    state.seed = Math.random();
+    const picks = {
+      key: rand(DATA.keys),
+      scale: rand(DATA.scales),
+      rootOctave: rand(DATA.octaves),
+      steps: rand(DATA.steps),
+      registerProfile: rand(DATA.registerProfiles),
+      densityPreset: rand(DATA.densityPresets),
+      contourPreset: rand(DATA.contourPresets),
+      repetitionPreset: rand(DATA.repetitionPresets),
+      mutationAmount: rand(DATA.mutationAmounts),
+      mutationTarget: rand(DATA.mutationTargets),
+      notePoolMode: rand(DATA.notePoolModes)
+    };
+    Object.entries(picks).forEach(([k,v])=>{ const node = el(k); if(node) node.value = v; });
+    regenerate('both');
+  };
+
+  document.querySelectorAll('.rnd').forEach(b=> b.onclick=()=> randomize(b.dataset.r));
+  if(el('btnRandomPhraseSetupAll')) el('btnRandomPhraseSetupAll').onclick=()=>{
+    state.seed = Math.random();
+    const picks = {
+      key: rand(DATA.keys),
+      scale: rand(DATA.scales),
+      rootOctave: rand(DATA.octaves),
+      steps: rand(DATA.steps),
+      registerProfile: rand(DATA.registerProfiles),
+      densityPreset: rand(DATA.densityPresets),
+      contourPreset: rand(DATA.contourPresets),
+      repetitionPreset: rand(DATA.repetitionPresets),
+      mutationAmount: rand(DATA.mutationAmounts),
+      mutationTarget: rand(DATA.mutationTargets),
+      notePoolMode: rand(DATA.notePoolModes)
+    };
+    Object.entries(picks).forEach(([k,v])=>{ const node = el(k); if(node) node.value = v; });
+    regenerate('both');
+  };
+  if(el('btnRandomPhraseSetupKeep')) el('btnRandomPhraseSetupKeep').onclick=()=>{
+    state.seed = Math.random();
+    const picks = {
+      scale: rand(DATA.scales),
+      rootOctave: rand(DATA.octaves),
+      registerProfile: rand(DATA.registerProfiles),
+      densityPreset: rand(DATA.densityPresets),
+      contourPreset: rand(DATA.contourPresets),
+      repetitionPreset: rand(DATA.repetitionPresets),
+      mutationAmount: rand(DATA.mutationAmounts),
+      mutationTarget: rand(DATA.mutationTargets),
+      notePoolMode: rand(DATA.notePoolModes)
+    };
+    Object.entries(picks).forEach(([k,v])=>{ const node = el(k); if(node) node.value = v; });
+    regenerate('both');
+  };
+
+  el('btnPlay').onclick=()=> state.playing ? stopPlayback() : startPlayback();
+  if(el('btnPanic')) el('btnPanic').onclick=()=> hardPanic(true);
+  if(el('btnPreviewPair')) el('btnPreviewPair').onclick=()=> { startPlayback(); };
+
+  el('btnExportCombined').onclick=()=> exportMidi('combined');
+  el('btnExportCall').onclick=()=> exportMidi('call');
+  el('btnExportResp').onclick=()=> exportMidi('response');
+  el('btnExportLayered').onclick=()=> exportMidi('layered');
+  if(el('btnExportBoth')) el('btnExportBoth').onclick=()=>{ exportMidi('call'); exportMidi('response'); };
+
+  el('btnSaveCfg').onclick=()=>{
+    const blob = new Blob([JSON.stringify(snapshotProject(), null, 2)], {type:'application/json'});
+    downloadBlob(blob, 'project.json');
+  };
+  if(el('btnLoadCfg') && el('cfgFileInput')) el('btnLoadCfg').onclick=()=> el('cfgFileInput').click();
+  if(el('cfgFileInput')) el('cfgFileInput').addEventListener('change', async (ev)=>{
+    const file = ev.target.files && ev.target.files[0];
+    if(!file) return;
+    try{
+      const text = await file.text();
+      const data = JSON.parse(text);
+      applyLoadedProject(data);
+      setStatus('Project loaded.');
+    } catch(err){
+      setStatus('Could not load project JSON.');
+    } finally {
+      ev.target.value = '';
+    }
+  });
+
+  el('btnReset').onclick=()=>{
+    Object.entries(DEFAULTS).forEach(([k,v])=>{ const node=el(k); if(node) node.value = v; });
+    renderAll();
+    if(state.playing) delayedRestart(200);
+    setStatus('Controls reset. Current pattern kept.');
+  };
+
+  document.querySelectorAll('select').forEach(node=>{
+    node.addEventListener('change', ()=>{
+      if(state.playing) delayedRestart(200);
+    });
+  });
+}
+
+init();
+</script>
+</body>
+</html>
